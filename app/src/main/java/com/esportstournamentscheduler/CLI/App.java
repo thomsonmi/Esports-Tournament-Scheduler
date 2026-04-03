@@ -13,7 +13,11 @@ public class App {
         System.out.println("Please select an option:");
         System.out.println("1. Create a new tournament");
         System.out.println("2. View existing tournaments");
-        System.out.println("3. Exit");
+        System.out.println("3. Create Teams");
+        System.out.println("5. Exit");
+        
+        List<Teams> teams = new ArrayList<>();
+
 
         int choice = scanner.nextInt();
         switch (choice) {
