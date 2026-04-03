@@ -26,11 +26,12 @@ public class Tournament {
 
     public Tournament(String name, int maxTeams, int maxPlayersPerTeam) 
     {
-        this.name = name;
-        this.registeredTeams = new ArrayList<>();
-        this.matches = new ArrayList<>();
         if(maxTeams != 4 && maxTeams != 8) throw new IllegalArgumentException("Max teams must be 4 or 8.");
         if(maxPlayersPerTeam != 8) throw new IllegalArgumentException("Max players per team must be 8.");
+
+        this.name = name;
+        this.registeredTeams = new ArrayList<>();
+        this.matches = new ArrayList<>();        
         this.MAX_TEAMS = maxTeams;
         this.MAX_PLAYERS_PER_TEAM = maxPlayersPerTeam;
         this.teamMap = new HashMap<>();
