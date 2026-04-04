@@ -17,18 +17,10 @@ public class App {
 
         int choice = scanner.nextInt();
         switch (choice) {
-            case 1:
-                System.out.println("Creating a new tournament...");
-                break;
-            case 2:
-                System.out.println("Viewing existing tournaments...");
-                break;
-            case 3:
-                System.out.println("Exiting the application. Goodbye!");
-                break;
-            default:
-                System.out.println("Invalid choice. Please try again.");
-                break;
+            case 1 -> System.out.println("Creating a new tournament...");
+            case 2 -> System.out.println("Viewing existing tournaments...");
+            case 3 -> System.out.println("Exiting the application. Goodbye!");
+            default -> System.out.println("Invalid choice. Please try again.");
         }
     }
     

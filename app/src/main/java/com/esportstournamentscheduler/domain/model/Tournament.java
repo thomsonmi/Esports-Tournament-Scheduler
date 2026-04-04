@@ -6,14 +6,18 @@ import java.util.List;
 public class Tournament {
     private final String id;
     private final String name;
+    private final String game;
     private final List<Team> registeredTeams;
     private List<Match> matches;
+    private final int maxPlayersPerTeam;
     
     private static final int MAX_TEAMS = 8;
 
-    public Tournament(String id, String name) {
+    public Tournament(String id, String name, String game, int maxPlayersPerTeam) {
         this.id = id;
         this.name = name;
+        this.game = game;
+        this.maxPlayersPerTeam = maxPlayersPerTeam;
         this.registeredTeams = new ArrayList<>();
         this.matches = new ArrayList<>();
     }
