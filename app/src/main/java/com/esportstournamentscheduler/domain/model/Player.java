@@ -5,8 +5,8 @@ public class Player {
     private final String id;
     private final String name;
 
-    public Player(String id, String name) {
-        this.id = id;
+    public Player(String name) {
+        this.id = java.util.UUID.randomUUID().toString();
         this.name = name;
     }
 
