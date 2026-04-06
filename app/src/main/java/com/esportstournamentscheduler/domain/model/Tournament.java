@@ -1,9 +1,13 @@
 package com.esportstournamentscheduler.domain.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.esportstournamentscheduler.domain.bracket.IBracketNode;
+import com.esportstournamentscheduler.domain.bracket.TeamNode;
 
 public class Tournament {
     private final String name;
@@ -41,19 +45,52 @@ public class Tournament {
         this.state = TournamentState.REGISTRATION; 
     }
 
+   private final List<List<Match>> bracketRounds = new ArrayList<>();
+    
+   
+
     public void startTournament() {
+        if(registeredTeams.size() != getMaxTeams()) throw new IllegalStateException("Must have " + getMaxTeams() + " teams.");
+        
+        Collections.shuffle(registeredTeams);
+        bracketRounds.clear();
 
-        if(registeredTeams.size() != MAX_TEAMS) throw new IllegalStateException("Tournament must have exactly " + MAX_TEAMS + " teams to start.");
-
+        // 1. Create the bottom layer (Team Nodes)
+        List<IBracketNode> currentNodes = new ArrayList<>();
         for(Team team : registeredTeams) {
-            teamMap.put(team.getName(), team);
-            // Logic to place teams in the bracket
+            currentNodes.add(new TeamNode(team));
+        }
 
+        // 2. Build the tree upward, round by round
+        int matchCounter = 1;
+        int roundCounter = 1;
+
+        while (currentNodes.size() > 1) {
+            List<IBracketNode> nextNodes = new ArrayList<>();
+            List<Match> thisRoundMatches = new ArrayList<>();
+            
+            for (int i = 0; i < currentNodes.size(); i += 2) {
+                IBracketNode left = currentNodes.get(i);
+                IBracketNode right = currentNodes.get(i + 1);
+                
+                String mId = "R" + roundCounter + "-M" + matchCounter++;
+                Match newMatch = new Match(mId, left, right);
+                
+                nextNodes.add(newMatch);
+                thisRoundMatches.add(newMatch);
+            }
+            
+            bracketRounds.add(thisRoundMatches); // Save the round for printing
+            currentNodes = nextNodes; // Move up the tree
+            roundCounter++;
         }
 
         this.state = TournamentState.IN_PROGRESS;
     }
 
+    public List<List<Match>> getBracketRounds() {
+        return bracketRounds;
+    }
     public void registerTeam(Team team) {
         if (registeredTeams.size() >= MAX_TEAMS) {
             throw new IllegalStateException("Tournament is full. Maximum " + MAX_TEAMS + " teams allowed.");
@@ -88,4 +125,6 @@ public class Tournament {
     public TournamentState getState() {
         return state;
     }
+
+    
 }

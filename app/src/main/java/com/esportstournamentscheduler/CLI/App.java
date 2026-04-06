@@ -18,35 +18,39 @@ public class App {
        IPlayerFactory playerFactory = new StandardPlayerFactory();
        manager = new TournamentManager(teamFactory, playerFactory);
     }
+    
 
-    public void start() {
+public void start() {
         boolean running = true;
+        
 
         while (running) { 
-            System.out.println("1. Create Team");
+           System.out.println("\n--- Main Menu ---");
+            System.out.println("1. Create Team (and add players)");
             System.out.println("2. View Teams");
             System.out.println("3. Remove Team");
-            System.out.println("4. Create Tournament");
-            System.out.println("5. Exit");
+            System.out.println("4. Start New Tournament (Auto-enrolls & builds bracket)"); 
+            System.out.println("5. View Tournament Bracket"); 
+            System.out.println("6. Play a Match (Enter Scores)"); 
+            System.out.println("7. Exit"); 
             System.out.print("Enter your choice: ");
             
             if(!scanner.hasNextInt()) {
                 System.out.println("Invalid input. Please enter a number.");
                 scanner.next(); // consume the invalid input
                 continue;
-            };
+            }
+            
             int choice = scanner.nextInt();
             scanner.nextLine(); // consume newline
 
             switch (choice) {
                 case 1:
-                   System.out.print("Enter the name of the new team: ");
+                    System.out.print("Enter the name of the new team: ");
                     String teamName = scanner.nextLine();
                     try {
-                        
                         manager.CreateTeam(teamName);
                         System.out.println("Success! Team '" + teamName + "' has been created.");
-                        
                         
                         System.out.print("How many players are on your team? ");
                         if (!scanner.hasNextInt()) {
@@ -58,7 +62,6 @@ public class App {
                         int numPlayers = scanner.nextInt();
                         scanner.nextLine(); // Consume newline
                         
-                        
                         for (int i = 0; i < numPlayers; i++) {
                             System.out.print("Enter name for Player " + (i + 1) + ": ");
                             String playerName = scanner.nextLine();
@@ -67,7 +70,6 @@ public class App {
                                 manager.addPlayerToTeam(teamName, playerName);
                                 System.out.println("  -> Added '" + playerName + "' to '" + teamName + "'.");
                             } catch (IllegalStateException e) {
-                                
                                 System.out.println("  -> Error: " + e.getMessage());
                                 System.out.println("  -> Stopping player additions for this team.");
                                 break; 
@@ -78,6 +80,7 @@ public class App {
                     } catch (IllegalArgumentException e) {
                         System.out.println("Error: " + e.getMessage());
                     }
+                    break;
                     
                 case 2:
                     System.out.println("Teams:");
@@ -85,6 +88,7 @@ public class App {
                         System.out.println(team);
                     }
                     break;
+                    
                 case 3:
                     System.out.print("Enter team name to remove: ");
                     String removeTeamName = scanner.nextLine();
@@ -95,19 +99,75 @@ public class App {
                         System.out.println(e.getMessage());
                     }
                     break;
+                    
                 case 4:
-                    System.out.println("Create Tournament functionality not implemented yet.");
+                    // THE NEW MEGA-OPTION
+                    System.out.print("Enter a name for the Tournament: ");
+                    String tName = scanner.nextLine();
+                    
+                    System.out.print("Enter the Game being played: ");
+                    String gName = scanner.nextLine();
+                    
+                    try {
+                        // 1. Create it and auto-enroll the saved teams
+                        manager.createTournamentFromSavedTeams(tName, gName);
+                        
+                        // 2. Immediately start it and generate the bracket tree
+                        manager.startActiveTournament();
+                        
+                        System.out.println("\nTournament officially started! The bracket has been generated.");
+                        
+                        // 3. Print the visual bracket right away so they see the result!
+                        manager.printVisualBracket();
+                        
+                    } catch (IllegalStateException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
                     break;
+                    
                 case 5:
+                    manager.printVisualBracket();
+                    break;
+                    
+               case 6:
+                    // 1. Print the bracket first so the user can see the Match IDs
+                    manager.printVisualBracket(); 
+                    
+                    System.out.print("Enter the Match ID you want to play (e.g., R1-M1): ");
+                    String matchId = scanner.nextLine();
+                    
+                    System.out.print("Enter score for Team 1 (Top/Left): ");
+                    if (!scanner.hasNextInt()) {
+                        System.out.println("Invalid score.");
+                        scanner.next(); continue;
+                    }
+                    int score1 = scanner.nextInt();
+                    
+                    System.out.print("Enter score for Team 2 (Bottom/Right): ");
+                    if (!scanner.hasNextInt()) {
+                        System.out.println("Invalid score.");
+                        scanner.next(); continue;
+                    }
+                    int score2 = scanner.nextInt();
+                    scanner.nextLine(); // consume newline
+                    
+                    try {
+                        manager.resolveMatch(matchId, score1, score2);
+                        System.out.println("\nMatch recorded successfully! Advancing winner...");
+                        
+                        // 2. Print the bracket again so they can see the winner move forward!
+                        manager.printVisualBracket(); 
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+
+                case 7:
                     running = false;
                     System.out.println("Exiting application. Goodbye!");
                     break;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
-                    break;
             }
-
-        }       
+        }
     }
     
 
