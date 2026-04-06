@@ -8,6 +8,7 @@ import com.esportstournamentscheduler.application.factory.IPlayerFactory;
 import com.esportstournamentscheduler.domain.model.Player;
 import com.esportstournamentscheduler.domain.model.Team;
 import com.esportstournamentscheduler.domain.model.Tournament;
+import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 
 public class TournamentManager 
 {
@@ -16,31 +17,32 @@ public class TournamentManager
 
     private final ITeamFactory teamFactory;
     private final IPlayerFactory playerFactory;
+    private final ITeamValidationPolicy teamValidationPolicy;
 
     public TournamentManager(ITeamFactory teamFactory, IPlayerFactory playerFactory) {
         this.teamFactory = teamFactory;
         this.playerFactory = playerFactory;
+        this.teamValidationPolicy = null; // You can inject this if you have a specific implementation
         tournament = new Tournament("Default Tournament", 8,5, "Default Game");
 
     }
 
     public void CreateTeam(String teamName) {
-        
+
+        teamValidationPolicy.validateUniqueTeamName(teamName, teams.keySet());
+
         Team newTeam = teamFactory.createTeam(teamName);
-        if(teams.containsKey(newTeam.getName())) throw new IllegalArgumentException("Team name already exists.");
 
         teams.put(newTeam.getName(), newTeam);
 
     }
+
     public void addPlayerToTeam(String teamName, String playerName) {
-        Team team = teams.get(teamName);
-        
+        Team team = teams.get(teamName);        
         
         if (team == null) {
             throw new IllegalArgumentException("Team '" + teamName + "' does not exist.");
         }
-        
-        
         if (team.getPlayers().size() >= tournament.getMaxPlayersPerTeam()) {
             throw new IllegalStateException("Team '" + teamName + "' is full. Maximum " + tournament.getMaxPlayersPerTeam() + " players allowed.");
         }
@@ -61,5 +63,14 @@ public class TournamentManager
     public void removeTeam(String teamName) {
         if(!teams.containsKey(teamName)) throw new IllegalArgumentException("Team name does not exist.");
         teams.remove(teamName);
+    }
+
+    public void startTournament() 
+    {
+        if(tournament.isRegistrationOpen())
+        {
+            
+        }
+        tournament.startTournament();
     }
 }
