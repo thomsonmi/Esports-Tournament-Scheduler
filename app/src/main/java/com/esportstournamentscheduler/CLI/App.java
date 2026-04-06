@@ -98,6 +98,10 @@ public class App {
                 case 4:
                     System.out.println("Create Tournament functionality not implemented yet.");
                     break;
+                case 5:
+                    running = false;
+                    System.out.println("Exiting application. Goodbye!");
+                    break;
                 default:
                     System.out.println("Invalid choice. Please try again.");
                     break;
