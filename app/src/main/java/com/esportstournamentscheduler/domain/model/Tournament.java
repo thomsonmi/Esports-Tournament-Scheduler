@@ -1,7 +1,6 @@
 package com.esportstournamentscheduler.domain.model;
 import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 import com.esportstournamentscheduler.domain.policy.StrictTeamValidationPolicy;
-import com.esportstournamentscheduler.domain.policy.FlexibleTeamValidationPolicy; 
 import com.esportstournamentscheduler.domain.policy.ITournamentValidationPolicy;
 import com.esportstournamentscheduler.domain.policy.TournamentValidationPolicy;
 
