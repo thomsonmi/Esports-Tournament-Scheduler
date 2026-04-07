@@ -73,7 +73,7 @@ public class Tournament {
                 IBracketNode left = currentNodes.get(i);
                 IBracketNode right = currentNodes.get(i + 1);
                 
-                String mId = "R" + roundCounter + "-M" + matchCounter++;
+                String mId = "Match " + matchCounter++;
                 Match newMatch = new Match(mId, left, right);
                 
                 nextNodes.add(newMatch);

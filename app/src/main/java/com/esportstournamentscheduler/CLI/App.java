@@ -22,7 +22,38 @@ public class App {
 
 public void start() {
         boolean running = true;
-        
+        // PRE-POPULATE SOME TEAMS & PLAYERS FOR DEMO PURPOSES
+    manager.CreateTeam("Alpha");
+    manager.addPlayerToTeam("Alpha", "A1");
+    manager.addPlayerToTeam("Alpha", "A2");
+
+    manager.CreateTeam("Bravo");
+    manager.addPlayerToTeam("Bravo", "B1");
+    manager.addPlayerToTeam("Bravo", "B2");
+
+    manager.CreateTeam("Crimson");
+    manager.addPlayerToTeam("Crimson", "C1");
+    manager.addPlayerToTeam("Crimson", "C2");
+
+    manager.CreateTeam("Delta");
+    manager.addPlayerToTeam("Delta", "D1");
+    manager.addPlayerToTeam("Delta", "D2");
+
+    manager.CreateTeam("Echo");
+    manager.addPlayerToTeam("Echo", "E1");
+    manager.addPlayerToTeam("Echo", "E2");
+
+    manager.CreateTeam("Foxtrot");
+    manager.addPlayerToTeam("Foxtrot", "F1");
+    manager.addPlayerToTeam("Foxtrot", "F2");
+
+    manager.CreateTeam("Gamma");
+    manager.addPlayerToTeam("Gamma", "G1");
+    manager.addPlayerToTeam("Gamma", "G2");
+
+    manager.CreateTeam("Hotel");
+    manager.addPlayerToTeam("Hotel", "H1");
+    manager.addPlayerToTeam("Hotel", "H2");
 
         while (running) { 
            System.out.println("\n--- Main Menu ---");
@@ -133,7 +164,7 @@ public void start() {
                     // 1. Print the bracket first so the user can see the Match IDs
                     manager.printVisualBracket(); 
                     
-                    System.out.print("Enter the Match ID you want to play (e.g., R1-M1): ");
+                    System.out.print("Enter the Match ID you want to play (Match 1): ");
                     String matchId = scanner.nextLine();
                     
                     System.out.print("Enter score for Team 1 (Top/Left): ");

@@ -86,32 +86,33 @@ public class TournamentManager
         }
         this.tournament.startTournament();
     }
-    public void resolveMatch(String matchId, int score1, int score2) {
+        public void resolveMatch(String matchId, int score1, int score2) {
         if (this.tournament == null) {
-            throw new IllegalStateException("No active tournament.");
+        throw new IllegalStateException("No active tournament.");
         }
 
-        Match targetMatch = null;
-        
-        // Search through the bracket rounds to find the exact match ID
-        for (List<Match> round : tournament.getBracketRounds()) {
-            for (Match m : round) {
-                if (m.getMatchId().equalsIgnoreCase(matchId)) {
-                    targetMatch = m;
-                    break;
-                }
-            }
-            if (targetMatch != null) break; // Stop searching if we found it
-        }
-
-        if (targetMatch == null) {
-            throw new IllegalArgumentException("Match ID '" + matchId + "' not found. Make sure you type it exactly as shown (e.g., R1-M1).");
-        }
-
-        // The Match class will handle the logic, throw errors if it's not ready, and set the winner!
-        targetMatch.finalizeScores(score1, score2);
+        String normalized = matchId.trim();
+        if (normalized.matches("\\d+")) {
+        normalized = "Match " + normalized;
     }
-    
+
+    Match targetMatch = null;
+    for (List<Match> round : tournament.getBracketRounds()) {
+    for (Match m : round) {
+    if (m.getMatchId().equalsIgnoreCase(normalized)) {
+    targetMatch = m;
+    break;
+    }
+    }
+    if (targetMatch != null) break;
+    }
+
+    if (targetMatch == null) {
+    throw new IllegalArgumentException("Match ID '" + matchId + "' not found. Try Match 1, Match 2, etc.");
+    }
+
+    targetMatch.finalizeScores(score1, score2);
+    }
 
     // --- NEW: AUTO-CREATE TOURNAMENT ---
 
@@ -142,8 +143,9 @@ public class TournamentManager
         this.tournament.registerTeam(team);
     }
 
-    // Helper to keep the ASCII boxes perfectly aligned
-    private String formatName(String name) {
+
+
+ private String formatName(String name) {
         if (name.length() > 10) name = name.substring(0, 10); // Truncate long names
         return String.format("%-12s", name); // Pad with spaces to exactly 12 characters
     }
