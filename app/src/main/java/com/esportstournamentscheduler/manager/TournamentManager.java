@@ -10,7 +10,11 @@ import com.esportstournamentscheduler.domain.model.Match;
 import com.esportstournamentscheduler.domain.model.Player;
 import com.esportstournamentscheduler.domain.model.Team;
 import com.esportstournamentscheduler.domain.model.Tournament;
+import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 
+/**
+ * Manages the operations related to a tournament, including team and player management.
+ */
 public class TournamentManager 
 {
     private Tournament tournament;
@@ -18,14 +22,21 @@ public class TournamentManager
 
     private final ITeamFactory teamFactory;
     private final IPlayerFactory playerFactory;
+    private final ITeamValidationPolicy teamValidationPolicy;
 
     public TournamentManager(ITeamFactory teamFactory, IPlayerFactory playerFactory) {
         this.teamFactory = teamFactory;
         this.playerFactory = playerFactory;
+        this.teamValidationPolicy = null; // You can inject this if you have a specific implementation
         tournament = new Tournament("Default Tournament", 8,5, "Default Game");
     }
 
     public void CreateTeam(String teamName) {
+
+        teamValidationPolicy.validateUniqueTeamName(teamName, teams.keySet());
+
+        Team newTeam = teamFactory.createTeam(teamName);
+
         Team newTeam = teamFactory.createTeam(teamName);
         if(teams.containsKey(newTeam.getName())) throw new IllegalArgumentException("Team name already exists.");
         teams.put(newTeam.getName(), newTeam);
