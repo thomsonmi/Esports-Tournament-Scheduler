@@ -34,7 +34,7 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "esports.tournament.scheduler.App"
+    mainClass = "com.esportstournamentscheduler.CLI.App"
 }
 
 tasks.named<Test>("test") {
