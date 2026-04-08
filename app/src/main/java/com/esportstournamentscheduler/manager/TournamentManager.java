@@ -45,6 +45,11 @@ public class TournamentManager
         teams.put(newTeam.getName(), newTeam);
     }
     
+    public void CreateTournament(String tournamentName, String gameName, int numOfTeams) 
+    {
+        tournaments.put(tournamentName, new Tournament(tournamentName, numOfTeams, 5, gameName));
+    }
+
     public void addPlayerToTeam(String teamName, String playerName) {
         Team team = teams.get(teamName);
         
@@ -111,13 +116,16 @@ public class TournamentManager
         
         System.out.println("Successfully created '" + tournamentName + "' and auto-enrolled all " + teamCount + " teams!");
     }
+    
     public void startActiveTournament() {
         if (this.currentlySelectedTournament == null) {
             throw new IllegalStateException("No tournament created yet.");
         }
         this.currentlySelectedTournament.startTournament();
     }
-        public void resolveMatch(String matchId, int score1, int score2) {
+
+    public void resolveMatch(String matchId, int score1, int score2) 
+    {
         if (this.currentlySelectedTournament == null) {
         throw new IllegalStateException("No active tournament.");
         }
@@ -131,9 +139,9 @@ public class TournamentManager
     for (List<Match> round : currentlySelectedTournament.getBracketRounds()) {
     for (Match m : round) {
     if (m.getMatchId().equalsIgnoreCase(normalized)) {
-    targetMatch = m;
-    break;
-    }
+        targetMatch = m;
+        break;
+        }
     }
     if (targetMatch != null) break;
     }

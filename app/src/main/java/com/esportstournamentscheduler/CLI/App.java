@@ -76,6 +76,24 @@ public void start() {
 
             switch (choice) {
                 case 0: // Create Tournament
+                    System.out.print("Enter a name for the Tournament: ");
+                    String tournamentName = scanner.nextLine();
+                    System.out.print("Which game is being played? ");
+                    String gameName = scanner.nextLine();
+                    System.out.print("How many teams will be participating? (4 or 8) ");
+                    String numberOfTeams = scanner.nextLine();
+
+                    try 
+                    {
+                        manager.CreateTournament(tournamentName, gameName, Integer.parseInt(numberOfTeams));
+                        System.out.println("Tournament '" + tournamentName + "' for game '" + gameName + "' has been created successfully.");
+                    } catch (IllegalArgumentException e) 
+                    {
+                        // Incorrect number of teams
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
+
                     // System.out.print("Enter the name of the new team: ");
                     // String teamName = scanner.nextLine();
                     // try {
