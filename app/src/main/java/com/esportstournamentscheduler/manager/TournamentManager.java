@@ -22,7 +22,7 @@ public class TournamentManager
 
     private final ITeamFactory teamFactory;
     private final IPlayerFactory playerFactory;
-    private final ITeamValidationPolicy teamValidationPolicy;
+    private ITeamValidationPolicy teamValidationPolicy;
 
     public TournamentManager(ITeamFactory teamFactory, IPlayerFactory playerFactory, ITeamValidationPolicy teamValidationPolicy) {
         this.teamFactory = teamFactory;
@@ -67,6 +67,12 @@ public class TournamentManager
     public void removeTeam(String teamName) {
         if(!teams.containsKey(teamName)) throw new IllegalArgumentException("Team name does not exist.");
         teams.remove(teamName);
+    }
+
+    public void ChangePolicy(ITeamValidationPolicy newPolicy) 
+    {
+        if(newPolicy == null) throw new IllegalArgumentException("Validation policy cannot be null.");
+        this.teamValidationPolicy = newPolicy;
     }
 
     // --- BRACKET ENGINE HOOKS ---

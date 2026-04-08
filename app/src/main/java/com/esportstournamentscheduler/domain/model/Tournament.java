@@ -54,8 +54,6 @@ public class Tournament {
     }
 
    private final List<List<Match>> bracketRounds = new ArrayList<>();
-    
-   
 
     public void startTournament() {
         if(registeredTeams.size() != getMaxTeams()) throw new IllegalStateException("Must have " + getMaxTeams() + " teams.");
