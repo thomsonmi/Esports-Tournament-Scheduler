@@ -166,7 +166,14 @@ public class TournamentManager
     Match finalMatch = currentlySelectedTournament.getBracketRounds()
         .get(currentlySelectedTournament.getBracketRounds().size() - 1)
         .get(0);
-    String champion = finalMatch.getWinner() == null ? "TBD" : finalMatch.getWinner().getName();
+    String champion;
+    if(finalMatch.getWinner() == null){
+        champion = "TBD";
+    }
+    else {
+        champion = finalMatch.getWinner().getName();
+        currentlySelectedTournament.endTournament();
+    }
 
     System.out.println("--------------------------------------------------------------");
     System.out.println("CHAMPION: " + champion);

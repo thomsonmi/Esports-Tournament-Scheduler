@@ -95,6 +95,11 @@ public class Tournament {
 
     }
 
+    public void endTournament() {
+        if(state != TournamentState.IN_PROGRESS) throw new IllegalStateException("Tournament must be in progress to end.");
+        this.state = TournamentState.COMPLETED;
+    }
+
     public List<List<Match>> getBracketRounds() {
         return bracketRounds;
     }
