@@ -19,7 +19,7 @@ import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 public class TournamentManager 
 {
     private Tournament currentlySelectedTournament;
-    private List<Tournament> tournaments;
+    private Map<String, Tournament> tournaments;
     private Map<String, Team> teams = new HashMap<>();
 
     private final ITeamFactory teamFactory;
@@ -30,7 +30,7 @@ public class TournamentManager
         this.teamFactory = teamFactory;
         this.playerFactory = playerFactory;
         this.teamValidationPolicy = teamValidationPolicy;
-        tournaments = new ArrayList<Tournament>();
+        tournaments = new HashMap<>();
     }
 
     public void CreateTeam(String teamName) 
@@ -51,10 +51,6 @@ public class TournamentManager
         if (team == null) {
             throw new IllegalArgumentException("Team '" + teamName + "' does not exist.");
         }
-        
-        // if (team.getPlayers().size() >= currentlySelectedTournament.getMaxPlayersPerTeam()) {
-        //     throw new IllegalStateException("Team '" + teamName + "' is full. Maximum " + currentlySelectedTournament.getMaxPlayersPerTeam() + " players allowed.");
-        // }
 
         // Use the factory to create the player, then add them to the team
         Player newPlayer = playerFactory.createPlayer(playerName);
@@ -63,6 +59,21 @@ public class TournamentManager
 
     public Map<String, Team> getTeams() {
         return teams;
+    }
+
+    public Map<String, Tournament> getTournaments() {
+        return tournaments;
+    }
+
+    public void printAllTeams() {
+        if (teams.isEmpty()) {
+            System.out.println("No teams have been created yet.");
+            return;
+        }
+        System.out.println("Current Teams:");
+        for (Team team : teams.values()) {
+            System.out.println(team);
+        }
     }
 
     public void clearTeams() {

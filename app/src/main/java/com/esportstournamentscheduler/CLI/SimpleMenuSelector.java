@@ -73,7 +73,7 @@ public class SimpleMenuSelector {
         for (int i = 0; i < options.size(); i++) {
             String option = options.get(i);
             System.out.println(DARK_GRAY + "      " + RESET 
-                + BRIGHT_CYAN + "[" + (i + 1) + "]" + RESET 
+                + BRIGHT_CYAN + "[" + (i+1) + "]" + RESET 
                 + " " + WHITE + option + RESET);
         }
         
