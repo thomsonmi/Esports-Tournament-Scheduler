@@ -60,80 +60,55 @@ public void start() {
     manager.addPlayerToTeam("Hotel", "H1");
     manager.addPlayerToTeam("Hotel", "H2");
 */
+    // Use new simple menu selector
+        List<String> menuOptions = Arrays.asList(
+            "Create Tournament",
+            "Select Tournament",
+            "Create Team",
+            "View All Teams",
+            "View Tournaments",
+            "Quit"
+        );
+
+        List<String> tournamentMenuOptions = Arrays.asList(
+            "Start Tournament",
+            "View Tournament Details",
+            "Record Match Results",
+            "Add Team",
+            "Remove Team from Tournament",
+            "View Registered Teams",
+            "Back to Main Menu"
+        );
         while (running) { 
-            // Use new simple menu selector
-            List<String> menuOptions = Arrays.asList(
-                "Create Tournament",
-                "Select Tournament",
-                "Create Team",
-                "View All Teams",
-                "View Tournaments",
-                "Quit"
-            );
+            
             
             SimpleMenuSelector menu = new SimpleMenuSelector(menuOptions, scanner);
             int choice = menu.selectOption();
 
             switch (choice) {
                 case 0: // Create Tournament
-                    System.out.print("Enter a name for the Tournament: ");
-                    String tournamentName = scanner.nextLine();
-                    System.out.print("Which game is being played? ");
-                    String gameName = scanner.nextLine();
-                    System.out.print("How many teams will be participating? (4 or 8) ");
-                    String numberOfTeams = scanner.nextLine();
-
+                    String[] tournamentData = promptForTournamentCreation();
                     try 
                     {
-                        manager.CreateTournament(tournamentName, gameName, Integer.parseInt(numberOfTeams));
-                        System.out.println("Tournament '" + tournamentName + "' for game '" + gameName + "' has been created successfully.");
-                    } catch (IllegalArgumentException e) 
+                        manager.CreateTournament(tournamentData[0], tournamentData[1], Integer.parseInt(tournamentData[2]));
+                        System.out.println("Tournament '" + tournamentData[0] + "' created successfully.");
+                    } 
+                    catch (IllegalArgumentException e) 
                     {
-                        // Incorrect number of teams
                         System.out.println("Error: " + e.getMessage());
                     }
-                    break;
 
-                    // System.out.print("Enter the name of the new team: ");
-                    // String teamName = scanner.nextLine();
-                    // try {
-                    //     manager.CreateTeam(teamName);
-                    //     System.out.println("Success! Team '" + teamName + "' has been created.");
-                        
-                    //     System.out.print("How many players are on your team? ");
-                    //     if (!scanner.hasNextInt()) {
-                    //         System.out.println("Invalid input. Please enter a number.");
-                    //         scanner.next(); 
-                    //         continue; 
-                    //     }
-                        
-                    //     int numPlayers = scanner.nextInt();
-                    //     scanner.nextLine(); // Consume newline
-                        
-                    //     for (int i = 0; i < numPlayers; i++) {
-                    //         System.out.print("Enter name for Player " + (i + 1) + ": ");
-                    //         String playerName = scanner.nextLine();
-                            
-                    //         try {
-                    //             manager.addPlayerToTeam(teamName, playerName);
-                    //             System.out.println("  -> Added '" + playerName + "' to '" + teamName + "'.");
-                    //         } catch (IllegalStateException e) {
-                    //             System.out.println("  -> Error: " + e.getMessage());
-                    //             System.out.println("  -> Stopping player additions for this team.");
-                    //             break; 
-                    //         }
-                    //     }
-                    //     System.out.println("Team setup complete!");
-                        
-                    // } catch (IllegalArgumentException e) {
-                    //     System.out.println("Error: " + e.getMessage());
-                    // }
+                    break;                   
                     
                 case 1: // Select Tournament
-                    // System.out.println("Teams:");
-                    // for (Team team : manager.getTeams().values()) {
-                    //     System.out.println(team);
-                    // }
+                    String selectedTournament = selectTournamentMenu();
+                    if (selectedTournament != null) 
+                    {
+                        System.out.println("You selected: " + selectedTournament);
+                        
+                        SimpleMenuSelector tournamentMenu = new SimpleMenuSelector(tournamentMenuOptions, scanner);
+                        int tournamentChoice = tournamentMenu.selectOption();
+                    }
                     break;
                     
                 case 2:// Create Team
@@ -179,12 +154,12 @@ public void start() {
                     
                 case 4: // View Tournaments
                 // convert map to list of team names for menu selector
-                    List<String> TournamentsList = new ArrayList<>(manager.getTournaments().keySet());
+                    displayExistingTournaments();
+                    // List<String> TournamentsList = new ArrayList<>(manager.getTournaments().keySet());
 
-                    SimpleMenuSelector teamMenu = new SimpleMenuSelector(TournamentsList, scanner);
-                    int teamChoice = teamMenu.selectOption();
-                    //print bracket of selected team
-                    //[TODO]
+                    // SimpleMenuSelector teamMenu = new SimpleMenuSelector(TournamentsList, scanner);
+                    // int teamChoice = teamMenu.selectOption();
+                    
 
                     break;
 
@@ -201,6 +176,94 @@ public void start() {
         }
     }
     
+    /**
+     * Prompts the user for tournament creation details.
+     * @return A String array containing [tournamentName, gameName, numberOfTeams]
+     */
+    private String[] promptForTournamentCreation() {
+        System.out.println("\n=== Create New Tournament ===");
+        
+        System.out.print("Enter a name for the Tournament: ");
+        String tournamentName = scanner.nextLine();
+        
+        System.out.print("Which game is being played? ");
+        String gameName = scanner.nextLine();
+        
+        System.out.print("How many teams will be participating? (4 or 8): ");
+        String numberOfTeams = scanner.nextLine();
+        
+        System.out.println("=============================\n");
+        
+        return new String[]{tournamentName, gameName, numberOfTeams};
+    }
+    
+    /**
+     * Displays all existing tournaments in a formatted view.
+     */
+    private void displayExistingTournaments() {
+        java.util.Map<String, Object> tournaments = manager.getTournaments();
+        
+        System.out.println("\n=== Existing Tournaments ===");
+        
+        if (tournaments.isEmpty()) {
+            System.out.println("No tournaments have been created yet.");
+        } else {
+            int index = 1;
+            for (String tournamentName : tournaments.keySet()) {
+                System.out.println(index + ". " + tournamentName);
+                index++;
+            }
+        }
+        
+        System.out.println("=============================\n");
+    }
+    
+    /**
+     * Displays a numbered list of tournaments and allows the user to select one.
+     * @return The name of the selected tournament, or null if no tournaments exist
+     */
+    private String selectTournamentMenu() {
+        java.util.Map<String, Object> tournaments = manager.getTournaments();
+        
+        if (tournaments.isEmpty()) {
+            System.out.println("\n=== Select Tournament ===");
+            System.out.println("No tournaments have been created yet.");
+            System.out.println("===========================\n");
+            return null;
+        }
+        
+        List<String> tournamentList = new ArrayList<>(tournaments.keySet());
+        SimpleMenuSelector tournamentMenu = new SimpleMenuSelector(tournamentList, scanner);
+        int selectedIndex = tournamentMenu.selectOption();
+        
+        return tournamentList.get(selectedIndex);
+    }
+    
+    /**
+     * Displays the tournament submenu with options for managing a specific tournament.
+     * @param tournamentName The name of the selected tournament
+     * @return The user's menu selection (0-6), or -1 if returning to main menu
+     */
+    private int displayTournamentMenu(String tournamentName) {
+        List<String> tournamentOptions = Arrays.asList(
+            "View Tournament Details",
+            "View Registered Teams",
+            "Add Team to Tournament",
+            "Remove Team from Tournament",
+            "Start Tournament",
+            "Record Match Results",
+            "Back to Main Menu"
+        );
+        
+        System.out.println("\n" + "=".repeat(40));
+        System.out.println("Tournament: " + tournamentName);
+        System.out.println("=".repeat(40));
+        
+        SimpleMenuSelector menu = new SimpleMenuSelector(tournamentOptions, scanner);
+        int choice = menu.selectOption();
+        
+        return choice;
+    }
 
     public static void main(String[] args) {
         App app = new App();

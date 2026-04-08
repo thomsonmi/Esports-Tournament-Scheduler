@@ -47,7 +47,8 @@ public class TournamentManager
     
     public void CreateTournament(String tournamentName, String gameName, int numOfTeams) 
     {
-        tournaments.put(tournamentName, new Tournament(tournamentName, numOfTeams, 5, gameName));
+        Tournament newTournament = new Tournament(tournamentName, numOfTeams, 5, gameName);
+        tournaments.put(tournamentName, newTournament);
     }
 
     public void addPlayerToTeam(String teamName, String playerName) {
@@ -126,31 +127,43 @@ public class TournamentManager
 
     public void resolveMatch(String matchId, int score1, int score2) 
     {
-        if (this.currentlySelectedTournament == null) {
-        throw new IllegalStateException("No active tournament.");
-        }
+        // Check if a tournament is active
+        if (this.currentlySelectedTournament == null) throw new IllegalStateException("No active tournament.");
 
+        // Normalize match ID input (allow "1" instead of "Match 1", etc.)
         String normalized = matchId.trim();
-        if (normalized.matches("\\d+")) {
-        normalized = "Match " + normalized;
-    }
 
-    Match targetMatch = null;
-    for (List<Match> round : currentlySelectedTournament.getBracketRounds()) {
-    for (Match m : round) {
-    if (m.getMatchId().equalsIgnoreCase(normalized)) {
-        targetMatch = m;
-        break;
+        // Check if the input is purely numeric, and if so, prepend "Match "
+        if (normalized.matches("\\d+")) normalized = "Match " + normalized;
+
+        Match targetMatch = null;
+
+        // Search through all matches in the current tournament to find the one with the matching ID
+        for (List<Match> round : currentlySelectedTournament.getBracketRounds()) 
+        {
+            // For each match in the round, check if its ID matches the normalized input
+            for (Match m : round) 
+            {
+                // Check if the match ID matches the normalized input (case-insensitive)
+                if (m.getMatchId().equalsIgnoreCase(normalized)) 
+                {
+                    // Target match found, break out of the loops
+                    targetMatch = m;
+                    break;
+                }
+            }
+            
+            // If we've found the target match, no need to continue searching through rounds
+            if (targetMatch != null) break;
         }
-    }
-    if (targetMatch != null) break;
-    }
 
-    if (targetMatch == null) {
-    throw new IllegalArgumentException("Match ID '" + matchId + "' not found. Try Match 1, Match 2, etc.");
-    }
+        // If we finish searching all matches and haven't found a match with the given ID, throw an error
+        if (targetMatch == null) 
+        {
+            throw new IllegalArgumentException("Match ID '" + matchId + "' not found. Try Match 1, Match 2, etc.");
+        }
 
-    targetMatch.finalizeScores(score1, score2);
+        targetMatch.finalizeScores(score1, score2);
     }
 
     // --- NEW: AUTO-CREATE TOURNAMENT ---
