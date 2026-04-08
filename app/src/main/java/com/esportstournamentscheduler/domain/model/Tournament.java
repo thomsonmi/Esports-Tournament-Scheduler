@@ -53,7 +53,7 @@ public class Tournament {
         this.state = TournamentState.REGISTRATION; 
     }
 
-   private final List<List<Match>> bracketRounds = new ArrayList<>();
+    private final List<List<Match>> bracketRounds = new ArrayList<>();
 
     public void startTournament() {
          if(state != TournamentState.REGISTRATION) throw new IllegalStateException("Tournament must be in registration phase to start.");
@@ -119,21 +119,6 @@ public class Tournament {
         registeredTeams.add(team);
         teamMap.put(team.getName(), team);
     }
-
-    // public void CreateBracket() {
-    //     if (state != TournamentState.REGISTRATION) 
-    //     {
-    //          throw new IllegalStateException("Tournament must be in registration phase to create bracket.");
-    //     }
-
-    //     if(registeredTeams.size() != REQUIRED_TEAM_SIZE) 
-    //         throw new IllegalStateException("Tournament must have exactly " + REQUIRED_TEAM_SIZE + " teams to create bracket.");
-
-
-    //     // Logic to create matches based on registered teams
-
-
-    // }
     
     public List<Team> getRegisteredTeams() { 
         return registeredTeams; 
