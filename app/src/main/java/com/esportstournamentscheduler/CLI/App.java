@@ -128,7 +128,6 @@ public void start() {
                     // } catch (IllegalArgumentException e) {
                     //     System.out.println("Error: " + e.getMessage());
                     // }
-                    break;
                     
                 case 1: // Select Tournament
                     // System.out.println("Teams:");
@@ -188,7 +187,7 @@ public void start() {
                     //[TODO]
 
                     break;
-                    
+
                 case 5: // Quit
                     running = false;
                     System.out.println("Exiting application. Goodbye!");
