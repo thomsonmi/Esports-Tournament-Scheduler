@@ -10,6 +10,9 @@ import com.esportstournamentscheduler.domain.model.Team;
 import com.esportstournamentscheduler.domain.model.Tournament;
 import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 
+/**
+ * Manages the operations related to a tournament, including team and player management.
+ */
 public class TournamentManager 
 {
     private Tournament tournament;
