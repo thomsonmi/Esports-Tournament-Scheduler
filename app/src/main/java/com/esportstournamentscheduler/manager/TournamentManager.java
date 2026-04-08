@@ -36,8 +36,6 @@ public class TournamentManager
         teamValidationPolicy.validateUniqueTeamName(teamName, teams.keySet());
 
         Team newTeam = teamFactory.createTeam(teamName);
-
-        Team newTeam = teamFactory.createTeam(teamName);
         if(teams.containsKey(newTeam.getName())) throw new IllegalArgumentException("Team name already exists.");
         teams.put(newTeam.getName(), newTeam);
     }
