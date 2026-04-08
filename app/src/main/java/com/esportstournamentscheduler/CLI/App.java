@@ -9,6 +9,7 @@ import com.esportstournamentscheduler.application.factory.IPlayerFactory;
 import com.esportstournamentscheduler.application.factory.ITeamFactory;
 import com.esportstournamentscheduler.application.factory.StandardPlayerFactory;
 import com.esportstournamentscheduler.application.factory.StandardTeamFactory;
+import com.esportstournamentscheduler.domain.model.Tournament;
 import com.esportstournamentscheduler.domain.policy.FlexibleTeamValidationPolicy;
 import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 import com.esportstournamentscheduler.manager.TournamentManager;
@@ -69,19 +70,8 @@ public void start() {
             "View Tournaments",
             "Quit"
         );
-
-        List<String> tournamentMenuOptions = Arrays.asList(
-            "Start Tournament",
-            "View Tournament Details",
-            "Record Match Results",
-            "Add Team",
-            "Remove Team from Tournament",
-            "View Registered Teams",
-            "Back to Main Menu"
-        );
-        while (running) { 
-            
-            
+        while (running) 
+        {     
             SimpleMenuSelector menu = new SimpleMenuSelector(menuOptions, scanner);
             int choice = menu.selectOption();
 
@@ -102,13 +92,25 @@ public void start() {
                     
                 case 1: // Select Tournament
                     String selectedTournament = selectTournamentMenu();
-                    if (selectedTournament != null) 
-                    {
-                        System.out.println("You selected: " + selectedTournament);
-                        
-                        SimpleMenuSelector tournamentMenu = new SimpleMenuSelector(tournamentMenuOptions, scanner);
-                        int tournamentChoice = tournamentMenu.selectOption();
+                    if (selectedTournament != null) {
+                    int tournamentChoice = displayTournamentMenu(selectedTournament);
+        
+                    switch(tournamentChoice) {
+                        case 0: // View Tournament Details
+                            // logic here
+                            break;
+                        case 1: // View Registered Teams
+                            // logic here
+                            break;
+                        case 2: // Add Team to Tournament
+                            // logic here
+                            break;
+                        // ... etc
+                        case 6: // Back to Main Menu
+                            // automatically returns to main menu
+                            break;
                     }
+                }
                     break;
                     
                 case 2:// Create Team
@@ -201,7 +203,7 @@ public void start() {
      * Displays all existing tournaments in a formatted view.
      */
     private void displayExistingTournaments() {
-        java.util.Map<String, Object> tournaments = manager.getTournaments();
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
         
         System.out.println("\n=== Existing Tournaments ===");
         
@@ -223,7 +225,7 @@ public void start() {
      * @return The name of the selected tournament, or null if no tournaments exist
      */
     private String selectTournamentMenu() {
-        java.util.Map<String, Object> tournaments = manager.getTournaments();
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
         
         if (tournaments.isEmpty()) {
             System.out.println("\n=== Select Tournament ===");
