@@ -7,6 +7,8 @@ import com.esportstournamentscheduler.application.factory.ITeamFactory;
 import com.esportstournamentscheduler.application.factory.StandardPlayerFactory;
 import com.esportstournamentscheduler.application.factory.StandardTeamFactory;
 import com.esportstournamentscheduler.domain.model.Team;
+import com.esportstournamentscheduler.domain.policy.FlexibleTeamValidationPolicy;
+import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 import com.esportstournamentscheduler.manager.TournamentManager;
 
 public class App {
@@ -16,7 +18,8 @@ public class App {
     public App() {
        ITeamFactory teamFactory = new StandardTeamFactory();
        IPlayerFactory playerFactory = new StandardPlayerFactory();
-       manager = new TournamentManager(teamFactory, playerFactory);
+         ITeamValidationPolicy teamValidationPolicy = new FlexibleTeamValidationPolicy();
+         manager = new TournamentManager(teamFactory, playerFactory, teamValidationPolicy);
     }
     
 

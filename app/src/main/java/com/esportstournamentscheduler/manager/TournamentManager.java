@@ -24,10 +24,10 @@ public class TournamentManager
     private final IPlayerFactory playerFactory;
     private final ITeamValidationPolicy teamValidationPolicy;
 
-    public TournamentManager(ITeamFactory teamFactory, IPlayerFactory playerFactory) {
+    public TournamentManager(ITeamFactory teamFactory, IPlayerFactory playerFactory, ITeamValidationPolicy teamValidationPolicy) {
         this.teamFactory = teamFactory;
         this.playerFactory = playerFactory;
-        this.teamValidationPolicy = null; // You can inject this if you have a specific implementation
+        this.teamValidationPolicy = teamValidationPolicy;
         tournament = new Tournament("Default Tournament", 8,5, "Default Game");
     }
 
