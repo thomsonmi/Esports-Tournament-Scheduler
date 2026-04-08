@@ -1,72 +1,82 @@
 package com.esportstournamentscheduler.domain.model;
 
-public class Match {
+import com.esportstournamentscheduler.domain.bracket.IBracketNode; // Make sure this import matches your folder structure!
+
+public class Match implements IBracketNode {
     private final String matchId;
-    private final Team team1;
-    private final Team team2;
-    private int team1Score;
-    private int team2Score;
+    
+    // The Composite Tree Nodes
+    private final IBracketNode leftChild;
+    private final IBracketNode rightChild;
+    
     private Team winner;
+    
+    public enum MatchState { PENDING, COMPLETED }
     private MatchState state;
 
-    private enum MatchState {
-        PENDING,
-        ONGOING,
-        COMPLETED
-    }
-    
-    public Match(String matchId, Team team1, Team team2) {
+    // Constructor
+    public Match(String matchId, IBracketNode leftChild, IBracketNode rightChild) {
         this.matchId = matchId;
-        this.team1 = team1;
-        this.team2 = team2;
-        this.team1Score = 0;
-        this.team2Score = 0;
+        this.leftChild = leftChild;
+        this.rightChild = rightChild;
         this.state = MatchState.PENDING;
     }
-     // i think states will need to be implemented in this I have not done that 
-    public void start() {
-        this.state = MatchState.ONGOING;
-       
-    }
 
-    public void complete() {
-         this.state = MatchState.COMPLETED;
-    }
-
-    public void finalizeScores(int team1Score, int team2Score) 
-    {
-        this.team1Score = team1Score;
-        this.team2Score = team2Score;
-        if (team1Score > team2Score) setWinner(team1);
-        else if (team2Score > team1Score) setWinner(team2);
-        else throw new IllegalStateException("Error! Tie detected. Please resolve and re-enter match score");
-        complete();
+    // --- NEW GETTERS FOR THE BRACKET PRINTER ---
+    public IBracketNode getLeftNode() { 
+        return leftChild; 
     }
     
-    public void setWinner(Team winner) { 
-        this.winner = winner; 
+    public IBracketNode getRightNode() { 
+        return rightChild; 
     }
+
+    // --- IBracketNode Implementation ---
+    @Override
     public Team getWinner() { 
         return winner; 
     }
-    
-    public Team getTeam1() { 
-        return team1; 
-    }
-    public Team getTeam2() { 
-        return team2; 
-    }
-    public String getMatchId() { 
-        return matchId; 
+
+    @Override
+    public boolean isReady() {
+        return leftChild.getWinner() != null && rightChild.getWinner() != null;
     }
 
     @Override
-    // will change later to be more visually appealing 
+    public String getDisplayName() {
+        if (state == MatchState.COMPLETED && winner != null) {
+            return winner.getName();
+        }
+        return "Winner of " + matchId;
+    }
+
+    // --- Core Logic ---
+    public void finalizeScores(int score1, int score2) {
+        if (!isReady()) throw new IllegalStateException("Match waiting on previous rounds.");
+        if (state == MatchState.COMPLETED) throw new IllegalStateException("Match already completed.");
+        
+        Team t1 = leftChild.getWinner();
+        Team t2 = rightChild.getWinner();
+        
+        if (score1 > score2) winner = t1;
+        else if (score2 > score1) winner = t2;
+        else throw new IllegalStateException("Ties not allowed.");
+        
+        this.state = MatchState.COMPLETED;
+    }
+
+    public String getMatchId() { 
+        return matchId; 
+    }
+    
+    public MatchState getState() { 
+        return state; 
+    }
+    
+    @Override
     public String toString() {
-        return 
-        matchId + ": " + team1.getName() +
-        " vs " + team2.getName() +
-        " | Scores: " + team1Score + "-" + team2Score + 
-               (winner != null ? " | Winner: " + winner.getName() : "");
+        String status = isReady() ? (state == MatchState.COMPLETED ? "[DONE]" : "[READY]") : "[WAITING]";
+        return String.format("%-8s %-10s : %s  vs  %s", 
+            matchId, status, leftChild.getDisplayName(), rightChild.getDisplayName());
     }
 }
