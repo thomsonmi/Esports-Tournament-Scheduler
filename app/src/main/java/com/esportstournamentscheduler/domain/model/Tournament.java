@@ -56,7 +56,9 @@ public class Tournament {
    private final List<List<Match>> bracketRounds = new ArrayList<>();
 
     public void startTournament() {
-        if(registeredTeams.size() != getMaxTeams()) throw new IllegalStateException("Must have " + getMaxTeams() + " teams.");
+         if(state != TournamentState.REGISTRATION) throw new IllegalStateException("Tournament must be in registration phase to start.");
+         tournamentValidationPolicy.validateNumberOfTeams(registeredTeams.size(), REQUIRED_TEAM_SIZE);
+       
         
         Collections.shuffle(registeredTeams);
         bracketRounds.clear();
@@ -96,30 +98,37 @@ public class Tournament {
     public List<List<Match>> getBracketRounds() {
         return bracketRounds;
     }
+
+    /**
+     * Registers a team for the tournament. Must be called during the registration phase and will validate the team based on the current team validation policy.
+     * @param team - The team to register. Must not be null and must meet the criteria defined by the current ITeamValidationPolicy.
+     */
     public void registerTeam(Team team) {
         
         if(state != TournamentState.REGISTRATION) throw new IllegalStateException("Tournament must be in registration phase to register teams.");
-        tournamentValidationPolicy.validateNumberOfTeams(registeredTeams.size() + 1, REQUIRED_TEAM_SIZE);
-        teamValidationPolicy.validateTeam(team, MAX_PLAYERS_PER_TEAM);
+        if(registeredTeams.size() >= REQUIRED_TEAM_SIZE) throw new IllegalStateException("Tournament is full. Cannot register more than " + REQUIRED_TEAM_SIZE + " teams.");
+        
+        teamValidationPolicy.validateTeamSize(team, MAX_PLAYERS_PER_TEAM);
         teamValidationPolicy.validateUniqueTeamName(team.getName(), teamMap.keySet());
+
         registeredTeams.add(team);
         teamMap.put(team.getName(), team);
     }
 
-    public void CreateBracket() {
-        if (state != TournamentState.REGISTRATION) 
-        {
-             throw new IllegalStateException("Tournament must be in registration phase to create bracket.");
-        }
+    // public void CreateBracket() {
+    //     if (state != TournamentState.REGISTRATION) 
+    //     {
+    //          throw new IllegalStateException("Tournament must be in registration phase to create bracket.");
+    //     }
 
-        if(registeredTeams.size() != REQUIRED_TEAM_SIZE) 
-            throw new IllegalStateException("Tournament must have exactly " + REQUIRED_TEAM_SIZE + " teams to create bracket.");
-
-
-        // Logic to create matches based on registered teams
+    //     if(registeredTeams.size() != REQUIRED_TEAM_SIZE) 
+    //         throw new IllegalStateException("Tournament must have exactly " + REQUIRED_TEAM_SIZE + " teams to create bracket.");
 
 
-    }
+    //     // Logic to create matches based on registered teams
+
+
+    // }
     
     public List<Team> getRegisteredTeams() { 
         return registeredTeams; 

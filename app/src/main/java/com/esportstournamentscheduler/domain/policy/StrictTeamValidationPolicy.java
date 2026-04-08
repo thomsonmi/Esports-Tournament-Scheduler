@@ -5,7 +5,7 @@ import com.esportstournamentscheduler.domain.model.Team;
 public class StrictTeamValidationPolicy implements ITeamValidationPolicy 
 {
     @Override
-    public void validateTeam(Team team, int maxPlayersPerTeam) {
+    public void validateTeamSize(Team team, int maxPlayersPerTeam) {
         if (team.getPlayers().size() != maxPlayersPerTeam) {
             throw new IllegalStateException("Team does not have the required number of players");
         }
