@@ -117,82 +117,125 @@ public class TournamentManager
     // --- NEW: AUTO-CREATE TOURNAMENT ---
 
     // --- UPDATED: ASCII VISUAL BRACKET ---
-    public void printVisualBracket() {
-        if (tournament == null || tournament.getBracketRounds().isEmpty()) {
-            System.out.println("Bracket not generated yet.");
-            return;
+   public void printVisualBracket() {
+    if (tournament == null || tournament.getBracketRounds().isEmpty()) {
+        System.out.println("Bracket not generated yet.");
+        return;
+    }
+
+    List<String> lines = buildTreeBracketLines();
+    System.out.println();
+    System.out.println("==============================================================");
+    System.out.println("BRACKET: " + tournament.getName() + " | GAME: " + tournament.getGame());
+    System.out.println("==============================================================");
+    for (String line : lines) {
+        System.out.println(line);
+    }
+
+    Match finalMatch = tournament.getBracketRounds()
+        .get(tournament.getBracketRounds().size() - 1)
+        .get(0);
+    String champion = finalMatch.getWinner() == null ? "TBD" : finalMatch.getWinner().getName();
+
+    System.out.println("--------------------------------------------------------------");
+    System.out.println("CHAMPION: " + champion);
+    System.out.println("==============================================================");
+    System.out.println();
+}
+
+private List<String> buildTreeBracketLines() {
+    List<List<Match>> rounds = tournament.getBracketRounds();
+    int teamCount = tournament.getMaxTeams();
+
+    int rows = teamCount * 2 - 1;
+    int nameColWidth = 18;
+    int roundColStep = 22;
+    int cols = nameColWidth + (rounds.size() * roundColStep) + 30;
+
+    char[][] canvas = new char[rows][cols];
+    for (int r = 0; r < rows; r++) {
+        java.util.Arrays.fill(canvas[r], ' ');
+    }
+
+    // Seed team names from round 1 match leaves.
+    List<String> teamNames = new java.util.ArrayList<>();
+    for (Match m : rounds.get(0)) {
+        teamNames.add(m.getLeftNode().getDisplayName());
+        teamNames.add(m.getRightNode().getDisplayName());
+    }
+    for (int i = 0; i < teamNames.size(); i++) {
+        putText(canvas, i * 2, 0, fit(teamNames.get(i), nameColWidth - 1));
+    }
+
+    for (int roundIndex = 0; roundIndex < rounds.size(); roundIndex++) {
+        List<Match> roundMatches = rounds.get(roundIndex);
+        int groupSize = 1 << (roundIndex + 1);
+        int anchorCol = nameColWidth + (roundIndex * roundColStep);
+
+        for (int matchIndex = 0; matchIndex < roundMatches.size(); matchIndex++) {
+            Match m = roundMatches.get(matchIndex);
+
+            int topTeamIndex = matchIndex * groupSize;
+            int bottomTeamIndex = topTeamIndex + groupSize - 1;
+
+            int topRow = topTeamIndex * 2;
+            int bottomRow = bottomTeamIndex * 2;
+            int midRow = (topRow + bottomRow) / 2;
+
+            // Vertical trunk for this match connector
+            for (int r = topRow + 1; r < bottomRow; r++) {
+                canvas[r][anchorCol - 2] = '|';
+            }
+
+            // Horizontal arms into the trunk
+            for (int c = anchorCol - 6; c < anchorCol - 2; c++) {
+                canvas[topRow][c] = '-';
+                canvas[bottomRow][c] = '-';
+            }
+
+            canvas[topRow][anchorCol - 2] = '+';
+            canvas[bottomRow][anchorCol - 2] = '+';
+            canvas[midRow][anchorCol - 2] = '+';
+
+            for (int c = anchorCol - 1; c < anchorCol + 2; c++) {
+                canvas[midRow][c] = '-';
+            }
+
+            String winner = m.getWinner() == null ? "TBD" : m.getWinner().getName();
+            String label = String.format("%s [%s] %s",
+                m.getMatchId(),
+                m.getState().name(),
+                fit(winner, 12)
+            );
+            putText(canvas, midRow, anchorCol + 3, label);
         }
+    }
 
-        System.out.println("\n==================================================================");
-        System.out.println("                        OFFICIAL BRACKET");
-        System.out.println("==================================================================\n");
+    List<String> out = new java.util.ArrayList<>();
+    for (int r = 0; r < rows; r++) {
+        out.add(rtrim(new String(canvas[r])));
+    }
+    return out;
+}
 
-        if (tournament.getMaxTeams() == 4) {
-            print4TeamBracket();
-        } else if (tournament.getMaxTeams() == 8) {
-            print8TeamBracket();
+private void putText(char[][] canvas, int row, int col, String text) {
+    if (row < 0 || row >= canvas.length) return;
+    for (int i = 0; i < text.length() && col + i < canvas[row].length; i++) {
+        if (col + i >= 0) {
+            canvas[row][col + i] = text.charAt(i);
         }
-        
-        System.out.println("\n==================================================================\n");
     }
+}
 
-    public void enrollTeamInTournament(String teamName) {
-        if (this.tournament == null) throw new IllegalStateException("No active tournament.");
-        Team team = teams.get(teamName);
-        if (team == null) throw new IllegalArgumentException("Team does not exist.");
-        this.tournament.registerTeam(team);
-    }
+private String fit(String value, int width) {
+    if (value == null) value = "";
+    if (value.length() > width) return value.substring(0, width - 1) + ".";
+    return String.format("%-" + width + "s", value);
+}
 
-
-
- private String formatName(String name) {
-        if (name.length() > 10) name = name.substring(0, 10); // Truncate long names
-        return String.format("%-12s", name); // Pad with spaces to exactly 12 characters
-    }
-
-    private void print4TeamBracket() {
-        List<Match> r1 = tournament.getBracketRounds().get(0);
-        List<Match> r2 = tournament.getBracketRounds().get(1);
-
-        Match m1 = r1.get(0); Match m2 = r1.get(1); 
-        Match m3 = r2.get(0); // Finals
-
-        String champ = m3.getWinner() != null ? m3.getWinner().getName() : "TBD";
-
-        System.out.println(formatName(m1.getLeftNode().getDisplayName()) + " ──┐");
-        System.out.println("                 ├── " + formatName(m3.getLeftNode().getDisplayName()) + " ──┐");
-        System.out.println(formatName(m1.getRightNode().getDisplayName()) + " ──┘                 │");
-        System.out.println("                                     ├── CHAMPION: " + champ);
-        System.out.println(formatName(m2.getLeftNode().getDisplayName()) + " ──┐                 │");
-        System.out.println("                 ├── " + formatName(m3.getRightNode().getDisplayName()) + " ──┘");
-        System.out.println(formatName(m2.getRightNode().getDisplayName()) + " ──┘");
-    }
-
-    private void print8TeamBracket() {
-        List<Match> r1 = tournament.getBracketRounds().get(0);
-        List<Match> r2 = tournament.getBracketRounds().get(1);
-        List<Match> r3 = tournament.getBracketRounds().get(2);
-
-        Match m1 = r1.get(0); Match m2 = r1.get(1); Match m3 = r1.get(2); Match m4 = r1.get(3);
-        Match m5 = r2.get(0); Match m6 = r2.get(1);
-        Match m7 = r3.get(0); // Finals
-
-        String champ = m7.getWinner() != null ? m7.getWinner().getName() : "TBD";
-
-        System.out.println(formatName(m1.getLeftNode().getDisplayName()) + " ──┐");
-        System.out.println("                 ├── " + formatName(m5.getLeftNode().getDisplayName()) + " ──┐");
-        System.out.println(formatName(m1.getRightNode().getDisplayName()) + " ──┘                  │");
-        System.out.println("                                      ├── " + formatName(m7.getLeftNode().getDisplayName()) + " ──┐");
-        System.out.println(formatName(m2.getLeftNode().getDisplayName()) + " ──┐                  │                  │");
-        System.out.println("                 ├── " + formatName(m5.getRightNode().getDisplayName()) + " ──┘                  │");
-        System.out.println(formatName(m2.getRightNode().getDisplayName()) + " ──┘                                     │");
-        System.out.println("                                                         ├── CHAMPION: " + champ);
-        System.out.println(formatName(m3.getLeftNode().getDisplayName()) + " ──┐                                     │");
-        System.out.println("                 ├── " + formatName(m6.getLeftNode().getDisplayName()) + " ──┐                  │");
-        System.out.println(formatName(m3.getRightNode().getDisplayName()) + " ──┘                  │                  │");
-        System.out.println("                                      ├── " + formatName(m7.getRightNode().getDisplayName()) + " ──┘");
-        System.out.println(formatName(m4.getLeftNode().getDisplayName()) + " ──┐                  │");
-        System.out.println("                 ├── " + formatName(m6.getRightNode().getDisplayName()) + " ──┘");
-        System.out.println(formatName(m4.getRightNode().getDisplayName()) + " ──┘");
-    }
+private String rtrim(String s) {
+    int end = s.length();
+    while (end > 0 && s.charAt(end - 1) == ' ') end--;
+    return s.substring(0, end);
+}
 }

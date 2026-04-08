@@ -38,7 +38,7 @@ public void start() {
     manager.CreateTeam("Delta");
     manager.addPlayerToTeam("Delta", "D1");
     manager.addPlayerToTeam("Delta", "D2");
-
+/* 
     manager.CreateTeam("Echo");
     manager.addPlayerToTeam("Echo", "E1");
     manager.addPlayerToTeam("Echo", "E2");
@@ -54,7 +54,7 @@ public void start() {
     manager.CreateTeam("Hotel");
     manager.addPlayerToTeam("Hotel", "H1");
     manager.addPlayerToTeam("Hotel", "H2");
-
+*/
         while (running) { 
            System.out.println("\n--- Main Menu ---");
             System.out.println("1. Create Team (and add players)");
