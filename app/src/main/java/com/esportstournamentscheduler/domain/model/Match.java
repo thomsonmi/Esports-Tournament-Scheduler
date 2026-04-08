@@ -30,8 +30,7 @@ public class Match implements IBracketNode {
     public IBracketNode getRightNode() { 
         return rightChild; 
     }
-
-    // --- IBracketNode Implementation ---
+    
     @Override
     public Team getWinner() { 
         return winner; 
