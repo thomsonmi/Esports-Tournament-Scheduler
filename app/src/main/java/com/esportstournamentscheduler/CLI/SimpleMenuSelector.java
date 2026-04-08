@@ -19,10 +19,12 @@ public class SimpleMenuSelector {
     private static final String BRIGHT_GREEN = "\u001B[92m";
     private static final String DARK_GRAY = "\u001B[90m";
     private static final String WHITE = "\u001B[97m";
+    private String menuHeading;
     
-    public SimpleMenuSelector(List<String> options, Scanner scanner) {
+    public SimpleMenuSelector(List<String> options, Scanner scanner, String menuHeading) {
         this.options = options;
         this.scanner = scanner;
+        this.menuHeading = menuHeading != null ? menuHeading : "MAIN MENU";
     }
     
     /**
@@ -40,13 +42,17 @@ public class SimpleMenuSelector {
             
             try {
                 int choice = Integer.parseInt(input) - 1;
-                if (choice >= 0 && choice < options.size()) {
+                if (choice >= 0 && choice < options.size()) 
+                    {
                     clearScreen();
                     return choice;
-                } else {
+                } 
+                else 
+                {
                     System.out.println(BRIGHT_RED + "  ✗ Invalid choice. Enter a number between 1 and " + options.size() + "." + RESET);
                 }
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException e) 
+            {
                 System.out.println(BRIGHT_RED + "  ✗ Invalid input. Please enter a number." + RESET);
             }
         }
@@ -60,13 +66,13 @@ public class SimpleMenuSelector {
         
         // Header
         System.out.println();
-        System.out.println(BRIGHT_CYAN + "  =====================================" + RESET);
-        System.out.println(BRIGHT_CYAN + "     ESPORTS TOURNAMENT SCHEDULER    " + RESET);
-        System.out.println(BRIGHT_CYAN + "  =====================================" + RESET);
+        System.out.println(BRIGHT_CYAN + "=========================================" + RESET);
+        System.out.println(BRIGHT_CYAN + "     ESPORTS TOURNAMENT SCHEDULER      " +  RESET);
+        System.out.println(BRIGHT_CYAN + "=========================================" + RESET);
         System.out.println();
         
         // Menu title
-        System.out.println(BRIGHT_YELLOW + "  MAIN MENU" + RESET);
+        System.out.println(BRIGHT_YELLOW + "  " + menuHeading + RESET);
         System.out.println();
         
         // Menu options

@@ -168,6 +168,22 @@ public class TournamentManager
 
     // --- NEW: AUTO-CREATE TOURNAMENT ---
 
+    /**
+     * Sets the currently selected tournament by tournament name.
+     * @param tournamentName The name of the tournament to select
+     */
+    public void setSelectedTournament(String tournamentName) 
+    {
+        if (tournaments.containsKey(tournamentName)) 
+        {
+            this.currentlySelectedTournament = tournaments.get(tournamentName);
+        } 
+        else 
+        {
+            throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
+        }
+    }
+
     // --- UPDATED: ASCII VISUAL BRACKET ---
    public void printVisualBracket() {
     if (currentlySelectedTournament == null || currentlySelectedTournament.getBracketRounds().isEmpty()) {

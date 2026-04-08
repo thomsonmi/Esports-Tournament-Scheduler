@@ -60,7 +60,7 @@ public class Tournament
         this.registeredTeams = new ArrayList<>();
         this.matches = new ArrayList<>();        
         this.teamMap = new HashMap<>();
-        
+
         this.state = TournamentState.REGISTRATION; 
     }
 

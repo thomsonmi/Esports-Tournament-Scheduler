@@ -72,7 +72,7 @@ public void start() {
         );
         while (running) 
         {     
-            SimpleMenuSelector menu = new SimpleMenuSelector(menuOptions, scanner);
+            SimpleMenuSelector menu = new SimpleMenuSelector(menuOptions, scanner, null);
             int choice = menu.selectOption();
 
             switch (choice) {
@@ -92,25 +92,49 @@ public void start() {
                     
                 case 1: // Select Tournament
                     String selectedTournament = selectTournamentMenu();
-                    if (selectedTournament != null) {
-                    int tournamentChoice = displayTournamentMenu(selectedTournament);
-        
-                    switch(tournamentChoice) {
-                        case 0: // View Tournament Details
-                            // logic here
-                            break;
-                        case 1: // View Registered Teams
-                            // logic here
-                            break;
-                        case 2: // Add Team to Tournament
-                            // logic here
-                            break;
-                        // ... etc
-                        case 6: // Back to Main Menu
-                            // automatically returns to main menu
-                            break;
+                    if (selectedTournament != null) 
+                    {
+                        int tournamentChoice = 0;
+                        while(tournamentChoice != 6) 
+                        {
+                            tournamentChoice = displayTournamentMenu(selectedTournament);
+            
+                            switch(tournamentChoice) 
+                            {
+                                case 0: // View Tournament Details
+                                    displayTournamentDetails(selectedTournament);
+                                    break;
+                                case 1: // View Registered Teams
+                                    displayRegisteredTeams(selectedTournament);
+                                    break;
+                                case 2: // Add Team to Tournament
+                                    // logic here
+                                    break;
+                                case 3: // Add team to tournament (register team)
+                                    break;
+                                case 4: // Remove team from tournament
+                                    break;
+                                case 5: // Start Tournament
+                                    try {
+                                        manager.setSelectedTournament(selectedTournament);
+                                        manager.startActiveTournament();
+                                        System.out.println("Tournament '" + selectedTournament + "' has been started.");
+                                    } catch (IllegalStateException e) {
+                                        System.out.println("Error: " + e.getMessage());
+                                    }
+                                    break;
+                                case 6: // Back to Main Menu
+                                    // automatically returns to main menu
+                                    break;
+                                case 8: // Display Bracket
+                                    displayTournamentBracket(selectedTournament);
+                                    break;
+                                default:
+                                    System.out.println("Invalid option. Please select a valid menu item.");
+                            }
+                        }
                     }
-                }
+
                     break;
                     
                 case 2:// Create Team
@@ -156,12 +180,7 @@ public void start() {
                     
                 case 4: // View Tournaments
                 // convert map to list of team names for menu selector
-                    displayExistingTournaments();
-                    // List<String> TournamentsList = new ArrayList<>(manager.getTournaments().keySet());
-
-                    // SimpleMenuSelector teamMenu = new SimpleMenuSelector(TournamentsList, scanner);
-                    // int teamChoice = teamMenu.selectOption();
-                    
+                    displayExistingTournaments();                   
 
                     break;
 
@@ -235,7 +254,7 @@ public void start() {
         }
         
         List<String> tournamentList = new ArrayList<>(tournaments.keySet());
-        SimpleMenuSelector tournamentMenu = new SimpleMenuSelector(tournamentList, scanner);
+        SimpleMenuSelector tournamentMenu = new SimpleMenuSelector(tournamentList, scanner, "SELECT TOURNAMENT");
         int selectedIndex = tournamentMenu.selectOption();
         
         return tournamentList.get(selectedIndex);
@@ -261,10 +280,126 @@ public void start() {
         System.out.println("Tournament: " + tournamentName);
         System.out.println("=".repeat(40));
         
-        SimpleMenuSelector menu = new SimpleMenuSelector(tournamentOptions, scanner);
+        SimpleMenuSelector menu = new SimpleMenuSelector(tournamentOptions, scanner, null);
         int choice = menu.selectOption();
         
         return choice;
+    }
+    
+    /**
+     * Displays detailed information about a specific tournament.
+     * @param tournamentName The name of the tournament to display details for
+     */
+    private void displayTournamentDetails(String tournamentName) {
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
+        Tournament tournament = tournaments.get(tournamentName);
+        
+        if (tournament == null) {
+            System.out.println("\nTournament '" + tournamentName + "' not found.");
+            return;
+        }
+
+        // We need to determine the tournament state (active/inactive) based on its current phase        
+         
+        // Display tournament details in a formatted manner
+        String tourneyState = "";
+
+        if(tournament.isRegistrationOpen()) {
+            tourneyState = "Registration Open";
+        } else if (tournament.isInProgress()) {
+            tourneyState = "In Progress";
+        } else if (tournament.isCompleted()) {
+            tourneyState = "Completed";
+        } else {
+            tourneyState = "Unknown State";
+        }
+            
+
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("TOURNAMENT DETAILS");
+        System.out.println("=".repeat(50));
+        System.out.println("Name:                    " + tournament.getName());
+        System.out.println("Game:                    " + tournament.getGame());
+        System.out.println("Required Teams:          " + tournament.getMaxTeams());
+        System.out.println("Max Players Per Team:    " + tournament.getMaxPlayersPerTeam());
+        System.out.println("Teams Registered:        " + tournament.getRegisteredTeams().size() + " / " + tournament.getMaxTeams());
+        System.out.println("Tournament State:        " + tourneyState);
+        System.out.println("=".repeat(50) + "\n");
+    }
+    
+    /**
+     * Displays all teams registered in a specific tournament.
+     * @param tournamentName The name of the tournament to display teams for
+     */
+    private void displayRegisteredTeams(String tournamentName) {
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
+        Tournament tournament = tournaments.get(tournamentName);
+        
+        if (tournament == null) {
+            System.out.println("\nTournament '" + tournamentName + "' not found.");
+            return;
+        }
+        
+        List<com.esportstournamentscheduler.domain.model.Team> registeredTeams = tournament.getRegisteredTeams();
+        
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("REGISTERED TEAMS - " + tournamentName);
+        System.out.println("=".repeat(50));
+        
+        if (registeredTeams.isEmpty()) {
+            System.out.println("No teams registered yet.");
+        } else {
+            int index = 1;
+            for (com.esportstournamentscheduler.domain.model.Team team : registeredTeams) {
+                System.out.println(index + ". " + team.getName() + " (" + team.getPlayers().size() + " players)");
+                index++;
+            }
+        }
+        
+        System.out.println("=".repeat(50) + "\n");
+    }
+    
+    /**
+     * Displays the tournament bracket along with tournament state information.
+     * @param tournamentName The name of the tournament to display the bracket for
+     */
+    private void displayTournamentBracket(String tournamentName) {
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
+        Tournament tournament = tournaments.get(tournamentName);
+        
+        if (tournament == null) {
+            System.out.println("\nTournament '" + tournamentName + "' not found.");
+            return;
+        }
+        
+        if (tournament.getBracketRounds().isEmpty()) {
+            System.out.println("\n" + "=".repeat(50));
+            System.out.println("TOURNAMENT BRACKET - " + tournamentName);
+            System.out.println("=".repeat(50));
+            System.out.println("Bracket has not been generated yet.");
+            System.out.println("Start the tournament to generate the bracket.");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        // Display the visual bracket
+        manager.setSelectedTournament(tournamentName);
+        manager.printVisualBracket();
+        
+        // Display tournament state below the bracket
+        String tourneyState = "";
+        if (tournament.isRegistrationOpen()) {
+            tourneyState = "Registration Open";
+        } else if (tournament.isInProgress()) {
+            tourneyState = "In Progress";
+        } else if (tournament.isCompleted()) {
+            tourneyState = "Completed";
+        } else {
+            tourneyState = "Unknown State";
+        }
+        
+        System.out.println("Tournament State: " + tourneyState);
+        System.out.println();
     }
 
     public static void main(String[] args) {
