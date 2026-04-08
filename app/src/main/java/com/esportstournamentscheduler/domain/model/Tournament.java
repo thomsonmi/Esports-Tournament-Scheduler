@@ -69,7 +69,6 @@ public class Tournament {
 
         // 2. Build the tree upward, round by round
         int matchCounter = 1;
-        int roundCounter = 1;
 
         while (currentNodes.size() > 1) {
             List<IBracketNode> nextNodes = new ArrayList<>();
@@ -88,7 +87,6 @@ public class Tournament {
             
             bracketRounds.add(thisRoundMatches); // Save the round for printing
             currentNodes = nextNodes; // Move up the tree
-            roundCounter++;
         }
 
         this.state = TournamentState.IN_PROGRESS;
@@ -105,6 +103,7 @@ public class Tournament {
         teamValidationPolicy.validateTeam(team, MAX_PLAYERS_PER_TEAM);
         teamValidationPolicy.validateUniqueTeamName(team.getName(), teamMap.keySet());
         registeredTeams.add(team);
+        teamMap.put(team.getName(), team);
     }
 
     public void CreateBracket() {

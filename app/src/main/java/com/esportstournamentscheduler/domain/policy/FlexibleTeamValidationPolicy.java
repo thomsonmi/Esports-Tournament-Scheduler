@@ -26,7 +26,6 @@ public class FlexibleTeamValidationPolicy implements ITeamValidationPolicy
         if (existingTeamNames.contains(teamName)) {
             throw new IllegalStateException("Flexible Policy: Team name '" + teamName + "' already exists.");
         }
-        existingTeamNames.add(teamName);
     }
     
 }

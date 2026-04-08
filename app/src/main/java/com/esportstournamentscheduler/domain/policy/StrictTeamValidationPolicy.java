@@ -17,7 +17,6 @@ public class StrictTeamValidationPolicy implements ITeamValidationPolicy
         if (existingTeamNames.contains(teamName)) {
             throw new IllegalStateException("Team name '" + teamName + "' already exists.");
         }
-        existingTeamNames.add(teamName);
     }
     
 }
