@@ -17,7 +17,8 @@ import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
  */
 public class TournamentManager 
 {
-    private Tournament tournament;
+    private Tournament currentlySelectedTournament;
+    private Map<String, Tournament> tournaments;
     private Map<String, Team> teams = new HashMap<>();
 
     private final ITeamFactory teamFactory;
@@ -28,27 +29,32 @@ public class TournamentManager
         this.teamFactory = teamFactory;
         this.playerFactory = playerFactory;
         this.teamValidationPolicy = teamValidationPolicy;
-        tournament = new Tournament("Default Tournament", 8,5, "Default Game");
+        tournaments = new HashMap<>();
     }
 
-    public void CreateTeam(String teamName) {
-
+    public void CreateTeam(String teamName) 
+    {
+        // Check if the teams name already exists in the tournament
         teamValidationPolicy.validateUniqueTeamName(teamName, teams.keySet());
-
+        
         Team newTeam = teamFactory.createTeam(teamName);
+        
         if(teams.containsKey(newTeam.getName())) throw new IllegalArgumentException("Team name already exists.");
+        
         teams.put(newTeam.getName(), newTeam);
     }
     
+    public void CreateTournament(String tournamentName, String gameName, int numOfTeams) 
+    {
+        Tournament newTournament = new Tournament(tournamentName, numOfTeams, 1, gameName);
+        tournaments.put(tournamentName, newTournament);
+    }
+
     public void addPlayerToTeam(String teamName, String playerName) {
         Team team = teams.get(teamName);
         
         if (team == null) {
             throw new IllegalArgumentException("Team '" + teamName + "' does not exist.");
-        }
-        
-        if (team.getPlayers().size() >= tournament.getMaxPlayersPerTeam()) {
-            throw new IllegalStateException("Team '" + teamName + "' is full. Maximum " + tournament.getMaxPlayersPerTeam() + " players allowed.");
         }
 
         // Use the factory to create the player, then add them to the team
@@ -60,80 +66,130 @@ public class TournamentManager
         return teams;
     }
 
-    public void clearTeams() {
-        teams.clear();
+    public Map<String, Tournament> getTournaments() {
+        return tournaments;
     }
 
-    public void removeTeam(String teamName) {
-        if(!teams.containsKey(teamName)) throw new IllegalArgumentException("Team name does not exist.");
-        teams.remove(teamName);
-    }
-
-    public void ChangePolicy(ITeamValidationPolicy newPolicy) 
-    {
-        if(newPolicy == null) throw new IllegalArgumentException("Validation policy cannot be null.");
-        this.teamValidationPolicy = newPolicy;
-    }
-
-    // --- BRACKET ENGINE HOOKS ---
-    public void createTournamentFromSavedTeams(String tournamentName, String gameName) {
-        int teamCount = teams.size();
-        
-        // 1. Validate we have a legal number of teams for a bracket
-        if (teamCount != 4 && teamCount != 8) {
-            throw new IllegalStateException("You must have exactly 4 or 8 teams saved to create a tournament. You currently have " + teamCount + ".");
+    public void printAllTeams() {
+        if (teams.isEmpty()) {
+            System.out.println("No teams have been created yet.");
+            return;
         }
-
-        // 2. Create the tournament dynamically based on how many teams exist
-        // (Assuming a default of 5 players max per team, but you can change this!)
-        this.tournament = new Tournament(tournamentName, teamCount, 5, gameName);
-
-        // 3. Auto-enroll every saved team into the new tournament
+        System.out.println("Current Teams:");
         for (Team team : teams.values()) {
-            this.tournament.registerTeam(team);
+            System.out.println(team);
         }
-        
-        System.out.println("Successfully created '" + tournamentName + "' and auto-enrolled all " + teamCount + " teams!");
     }
+
     public void startActiveTournament() {
-        if (this.tournament == null) {
+        if (this.currentlySelectedTournament == null) {
             throw new IllegalStateException("No tournament created yet.");
         }
-        this.tournament.startTournament();
+        this.currentlySelectedTournament.startTournament();
     }
-        public void resolveMatch(String matchId, int score1, int score2) {
-        if (this.tournament == null) {
-        throw new IllegalStateException("No active tournament.");
+
+    public void resolveMatch(String matchId, int score1, int score2) 
+    {
+        // Check if a tournament is active
+        if (this.currentlySelectedTournament == null) throw new IllegalStateException("No active tournament.");
+
+        // Normalize match ID input (allow "1" instead of "Match 1", etc.)
+        String normalized = matchId.trim();
+
+        // Check if the input is purely numeric, and if so, prepend "Match "
+        if (normalized.matches("\\d+")) normalized = "Match " + normalized;
+
+        Match targetMatch = null;
+
+        // Search through all matches in the current tournament to find the one with the matching ID
+        for (List<Match> round : currentlySelectedTournament.getBracketRounds()) 
+        {
+            // For each match in the round, check if its ID matches the normalized input
+            for (Match m : round) 
+            {
+                // Check if the match ID matches the normalized input (case-insensitive)
+                if (m.getMatchId().equalsIgnoreCase(normalized)) 
+                {
+                    // Target match found, break out of the loops
+                    targetMatch = m;
+                    break;
+                }
+            }
+            
+            // If we've found the target match, no need to continue searching through rounds
+            if (targetMatch != null) break;
         }
 
-        String normalized = matchId.trim();
-        if (normalized.matches("\\d+")) {
-        normalized = "Match " + normalized;
-    }
+        // If we finish searching all matches and haven't found a match with the given ID, throw an error
+        if (targetMatch == null) 
+        {
+            throw new IllegalArgumentException("Match ID '" + matchId + "' not found. Try Match 1, Match 2, etc.");
+        }
 
-    Match targetMatch = null;
-    for (List<Match> round : tournament.getBracketRounds()) {
-    for (Match m : round) {
-    if (m.getMatchId().equalsIgnoreCase(normalized)) {
-    targetMatch = m;
-    break;
-    }
-    }
-    if (targetMatch != null) break;
-    }
-
-    if (targetMatch == null) {
-    throw new IllegalArgumentException("Match ID '" + matchId + "' not found. Try Match 1, Match 2, etc.");
-    }
-
-    targetMatch.finalizeScores(score1, score2);
+        targetMatch.finalizeScores(score1, score2);
+        
+        // Advance the bracket by starting any matches in the next round that are now ready
+        currentlySelectedTournament.advanceReadyMatches();
     }
 
     // --- NEW: AUTO-CREATE TOURNAMENT ---
 
+    /**
+     * Sets the currently selected tournament by tournament name.
+     * @param tournamentName The name of the tournament to select
+     */
+    public void setSelectedTournament(String tournamentName) 
+    {
+        if (tournaments.containsKey(tournamentName)) 
+        {
+            this.currentlySelectedTournament = tournaments.get(tournamentName);
+        } 
+        else 
+        {
+            throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
+        }
+    }
+
+    /**
+     * Registers a team to a tournament by their names.
+     * @param tournamentName The name of the tournament to add the team to
+     * @param teamName The name of the team to register
+     * @throws IllegalArgumentException if tournament or team is not found
+     */
+    public void registerTeamToTournament(String tournamentName, String teamName) {
+        if (!tournaments.containsKey(tournamentName)) {
+            throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
+        }
+        
+        if (!teams.containsKey(teamName)) {
+            throw new IllegalArgumentException("Team '" + teamName + "' not found.");
+        }
+        
+        Tournament tournament = tournaments.get(tournamentName);
+        Team team = teams.get(teamName);
+        
+        tournament.registerTeam(team);
+    }
+
+    /**
+     * Removes a team from a tournament by their names.
+     * @param tournamentName The name of the tournament to remove the team from
+     * @param teamName The name of the team to unregister
+     * @throws IllegalArgumentException if tournament or team is not found
+     * @throws IllegalStateException if tournament is not in registration phase
+     */
+    public void removeTeamFromTournament(String tournamentName, String teamName) {
+        if (!tournaments.containsKey(tournamentName)) {
+            throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
+        }
+        
+        Tournament tournament = tournaments.get(tournamentName);
+        tournament.removeTeam(teamName);
+    }
+
     // --- UPDATED: ASCII VISUAL BRACKET ---
    public void printVisualBracket() {
-    if (tournament == null || tournament.getBracketRounds().isEmpty()) {
+    if (currentlySelectedTournament == null || currentlySelectedTournament.getBracketRounds().isEmpty()) {
         System.out.println("Bracket not generated yet.");
         return;
     }
@@ -141,16 +197,23 @@ public class TournamentManager
     List<String> lines = buildTreeBracketLines();
     System.out.println();
     System.out.println("==============================================================");
-    System.out.println("BRACKET: " + tournament.getName() + " | GAME: " + tournament.getGame());
+    System.out.println("BRACKET: " + currentlySelectedTournament.getName() + " | GAME: " + currentlySelectedTournament.getGame());
     System.out.println("==============================================================");
     for (String line : lines) {
         System.out.println(line);
     }
 
-    Match finalMatch = tournament.getBracketRounds()
-        .get(tournament.getBracketRounds().size() - 1)
+    Match finalMatch = currentlySelectedTournament.getBracketRounds()
+        .get(currentlySelectedTournament.getBracketRounds().size() - 1)
         .get(0);
-    String champion = finalMatch.getWinner() == null ? "TBD" : finalMatch.getWinner().getName();
+    String champion;
+    if(finalMatch.getWinner() == null){
+        champion = "TBD";
+    }
+    else {
+        champion = finalMatch.getWinner().getName();
+        currentlySelectedTournament.endTournament();
+    }
 
     System.out.println("--------------------------------------------------------------");
     System.out.println("CHAMPION: " + champion);
@@ -159,8 +222,8 @@ public class TournamentManager
 }
 
 private List<String> buildTreeBracketLines() {
-    List<List<Match>> rounds = tournament.getBracketRounds();
-    int teamCount = tournament.getMaxTeams();
+    List<List<Match>> rounds = currentlySelectedTournament.getBracketRounds();
+    int teamCount = currentlySelectedTournament.getMaxTeams();
 
     int rows = teamCount * 2 - 1;
     int nameColWidth = 18;

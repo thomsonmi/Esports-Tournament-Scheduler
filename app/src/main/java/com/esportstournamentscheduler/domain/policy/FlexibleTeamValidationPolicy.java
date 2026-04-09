@@ -8,7 +8,7 @@ public class FlexibleTeamValidationPolicy implements ITeamValidationPolicy
 {
 
     @Override
-    public void validateTeam(Team team, int maxPlayersPerTeam) 
+    public void validateTeamSize(Team team, int maxPlayersPerTeam) 
     {
         if (team.getPlayers().isEmpty()) 
         {
@@ -27,5 +27,4 @@ public class FlexibleTeamValidationPolicy implements ITeamValidationPolicy
             throw new IllegalStateException("Flexible Policy: Team name '" + teamName + "' already exists.");
         }
     }
-    
 }
