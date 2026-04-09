@@ -11,6 +11,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Core domain model representing a single esports tournament.
+ * Manages team registration, bracket generation, match progression,
+ * and lifecycle state transitions (REGISTRATION → IN_PROGRESS → COMPLETED).
+ * Uses the Strategy pattern for team and tournament validation, and the
+ * Composite pattern for the bracket tree structure.
+ */
 public class Tournament 
 {
     private final String name;                  // Tournament name
@@ -25,11 +32,11 @@ public class Tournament
     private ITeamValidationPolicy teamValidationPolicy; 
     private ITournamentValidationPolicy tournamentValidationPolicy;
 
-    // Enum to represent the state of the tournament
+    // Enum to represent the current lifecycle phase of the tournament.
     private enum TournamentState {
-        REGISTRATION,
-        IN_PROGRESS,
-        COMPLETED
+        REGISTRATION,   // Teams can be added or removed; bracket not yet generated.
+        IN_PROGRESS,    // Bracket generated; matches are being played.
+        COMPLETED       // All matches resolved; champion determined.
     }
 
     // Current state of the tournament
@@ -53,7 +60,7 @@ public class Tournament
         this.name = name;
         this.game = game;
 
-        this.teamValidationPolicy = new FlexibleTeamValidationPolicy(); // Default to strict policy, can be changed later
+        this.teamValidationPolicy = new FlexibleTeamValidationPolicy(); // Default policy: 1 to max players allowed
         this.tournamentValidationPolicy = new TournamentValidationPolicy(); // Default tournament validation policy
         
         this.registeredTeams = new ArrayList<>();
@@ -64,6 +71,15 @@ public class Tournament
 
     private final List<List<Match>> bracketRounds = new ArrayList<>();
 
+    /**
+     * Builds the elimination bracket and transitions the tournament to IN_PROGRESS.
+     * Registered teams are shuffled for random seeding, then paired into Match nodes
+     * bottom-up until a single root match (the final) remains. All first-round
+     * matches are auto-started once the bracket is built.
+     * @throws IllegalStateException if the tournament is not in REGISTRATION state,
+     *                               or if the registered team count does not match
+     *                               the required count.
+     */
     public void startTournament() {
          if(state != TournamentState.REGISTRATION) throw new IllegalStateException("Tournament must be in registration phase to start.");
          tournamentValidationPolicy.validateNumberOfTeams(registeredTeams.size(), REQUIRED_NUMBER_TEAMS);
@@ -151,11 +167,22 @@ public class Tournament
         }
     }
 
+    /**
+     * Transitions the tournament from IN_PROGRESS to COMPLETED.
+     * Called automatically by the bracket printer once a champion is determined.
+     * @throws IllegalStateException if the tournament is not currently IN_PROGRESS.
+     */
     public void endTournament() {
         if(state != TournamentState.IN_PROGRESS) throw new IllegalStateException("Tournament must be in progress to end.");
         this.state = TournamentState.COMPLETED;
     }
 
+    /**
+     * Returns the bracket rounds in order from the first round to the final.
+     * Each inner list contains all Matches played in that round.
+     * The list is empty until {@link #startTournament()} has been called.
+     * @return An ordered list of rounds, each containing that round's matches.
+     */
     public List<List<Match>> getBracketRounds() {
         return bracketRounds;
     }
@@ -208,6 +235,12 @@ public class Tournament
         return state == TournamentState.COMPLETED;
     }
 
+    /**
+     * Removes a registered team from the tournament by name.
+     * @param teamName The name of the team to remove.
+     * @throws IllegalStateException    if the tournament is not in REGISTRATION phase.
+     * @throws IllegalArgumentException if no team with the given name is registered.
+     */
     public void removeTeam(String teamName) {
         if(state != TournamentState.REGISTRATION) throw new IllegalStateException("Tournament must be in registration phase to remove teams.");
         if(!teamMap.containsKey(teamName)) throw new IllegalArgumentException("Team name does not exist.");

@@ -1,0 +1,166 @@
+========================================================
+  ESPORTS TOURNAMENT SCHEDULER — DESIGN PATTERNS GUIDE
+========================================================
+
+This document maps each design pattern used in the project
+to the specific classes and interfaces that implement it.
+
+--------------------------------------------------------
+1. STRATEGY PATTERN
+--------------------------------------------------------
+Intent:
+  Define a family of interchangeable algorithms (policies),
+  encapsulate each one, and make them swappable at runtime
+  without changing the code that uses them.
+
+Where it is used:
+
+  A) Team Validation Strategy
+     Interface : domain/policy/ITeamValidationPolicy.java
+     Strategies:
+       - FlexibleTeamValidationPolicy  (allows 1 to max players)
+       - StrictTeamValidationPolicy    (requires exact player count)
+     Context   : TournamentManager (holds the active policy)
+                 Tournament         (uses it inside registerTeam)
+
+     The active policy is injected into TournamentManager via
+     its constructor. Calling registerTeam() delegates size and
+     name-uniqueness checks to whichever policy is currently set,
+     so the validation rules can be changed without touching
+     Tournament or TournamentManager.
+
+  B) Tournament Validation Strategy
+     Interface : domain/policy/ITournamentValidationPolicy.java
+     Strategy  : TournamentValidationPolicy
+     Context   : Tournament (used inside startTournament)
+
+     Validates that the correct number of teams are registered
+     before the bracket is generated. A different policy could
+     relax or change the required count without modifying Tournament.
+
+--------------------------------------------------------
+2. FACTORY METHOD PATTERN
+--------------------------------------------------------
+Intent:
+  Define an interface for creating objects, but let subclasses
+  (or concrete implementations) decide which class to instantiate.
+
+Where it is used:
+
+  A) Team Factory
+     Interface   : application/factory/ITeamFactory.java
+     Concrete    : StandardTeamFactory.java
+     Consumer    : TournamentManager.CreateTeam()
+
+  B) Player Factory
+     Interface   : application/factory/IPlayerFactory.java
+     Concrete    : StandardPlayerFactory.java
+     Consumer    : TournamentManager.addPlayerToTeam()
+
+  Both factories are injected into TournamentManager at startup
+  (in App.java). This decouples object construction from business
+  logic — a different factory could produce specialised Team or
+  Player subtypes (e.g., with ranking data) without changing the
+  manager or CLI code.
+
+--------------------------------------------------------
+3. COMPOSITE PATTERN
+--------------------------------------------------------
+Intent:
+  Compose objects into tree structures to represent part-whole
+  hierarchies. Clients treat individual objects (leaves) and
+  compositions (composites) uniformly through a shared interface.
+
+Where it is used:
+
+  Component (shared interface):
+    domain/bracket/IBracketNode.java
+    Methods: getWinner(), isReady(), getDisplayName()
+
+  Leaf node:
+    domain/bracket/TeamNode.java
+    Wraps a single Team. Always reports itself as ready and
+    returns its own Team as the winner — no children.
+
+  Composite node:
+    domain/model/Match.java
+    Holds a left and right IBracketNode child (either TeamNodes
+    in round 1, or other Matches in later rounds). Reports
+    isReady() only when both children have a winner.
+
+  Container:
+    domain/model/Tournament.java (bracketRounds field)
+    Builds the tree bottom-up in startTournament():
+      Round 1 — pairs of TeamNodes  → Match nodes
+      Round 2 — pairs of Round-1 Matches → Match nodes
+      ...
+      Final   — the single root Match
+
+  Benefits:
+    - The bracket printer (TournamentManager.buildTreeBracketLines)
+      traverses every node via IBracketNode uniformly.
+    - Match.isReady() recurses implicitly: a semifinal is ready
+      only when both its child quarter-final Matches are done.
+
+--------------------------------------------------------
+4. STATE PATTERN (State Machine)
+--------------------------------------------------------
+Intent:
+  Allow an object to alter its behaviour when its internal
+  state changes. The object appears to change its class.
+
+Where it is used:
+
+  A) Tournament Lifecycle State
+     Class : domain/model/Tournament.java
+     States: REGISTRATION → IN_PROGRESS → COMPLETED
+             (TournamentState enum, private to Tournament)
+
+     - REGISTRATION : Teams can be added/removed; bracket not built.
+     - IN_PROGRESS  : Bracket generated; matches are being played.
+     - COMPLETED    : All matches resolved; champion determined.
+
+     Guards on each method enforce valid transitions:
+       registerTeam()   — requires REGISTRATION
+       removeTeam()     — requires REGISTRATION
+       startTournament()— requires REGISTRATION, moves → IN_PROGRESS
+       endTournament()  — requires IN_PROGRESS, moves → COMPLETED
+
+     The CLI reads isRegistrationOpen() / isInProgress() /
+     isCompleted() to display the current state in menus.
+
+  B) Match Lifecycle State
+     Class : domain/model/Match.java
+     States: PENDING → IN_PROGRESS → COMPLETED
+             (MatchState enum, public — used by the bracket printer)
+
+     - PENDING     : Participants may not yet be determined.
+     - IN_PROGRESS : Both participants are known; awaiting scores.
+     - COMPLETED   : Scores recorded; winner set.
+
+     Guards:
+       startMatch()     — requires PENDING + isReady()
+       finalizeScores() — requires isReady() + not COMPLETED
+
+     First-round matches transition PENDING → IN_PROGRESS
+     automatically at the end of startTournament().
+     Later-round matches are auto-started by advanceReadyMatches()
+     once all matches in the preceding round are COMPLETED.
+
+========================================================
+  SUMMARY TABLE
+========================================================
+
+  Pattern          | Key Interface / Class          | Location
+  -----------------+--------------------------------+-------------------------------
+  Strategy         | ITeamValidationPolicy          | domain/policy/
+                   | ITournamentValidationPolicy    | domain/policy/
+  Factory Method   | ITeamFactory                   | application/factory/
+                   | IPlayerFactory                 | application/factory/
+  Composite        | IBracketNode                   | domain/bracket/
+                   | TeamNode (leaf)                | domain/bracket/
+                   | Match (composite)              | domain/model/
+  State (machine)  | Tournament.TournamentState     | domain/model/Tournament.java
+                   | Match.MatchState               | domain/model/Match.java
+
+========================================================

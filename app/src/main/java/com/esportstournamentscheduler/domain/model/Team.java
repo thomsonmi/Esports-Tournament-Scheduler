@@ -3,8 +3,15 @@ package com.esportstournamentscheduler.domain.model;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a team competing in the esports tournament.
+ * A team has a name and an ordered roster of players.
+ */
 public class Team {
+    /** The team's unique display name. */
     private final String name;
+
+    /** The ordered roster of players belonging to this team. */
     private List<Player> players = new ArrayList<>();
 
     public Team(String name) {
@@ -20,8 +27,8 @@ public class Team {
     }
 
     /**
-     * Adds a player to the team.
-     * @param player void - The player to add.
+     * Adds a player to the team's roster.
+     * @param player The player to add.
      */
     public void addPlayer(Player player) {
         players.add(player);

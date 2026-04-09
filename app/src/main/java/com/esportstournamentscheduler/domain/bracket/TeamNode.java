@@ -1,6 +1,11 @@
 package com.esportstournamentscheduler.domain.bracket;
 import com.esportstournamentscheduler.domain.model.Team;
 
+/**
+ * Leaf node in the tournament bracket Composite tree, representing a single team.
+ * A TeamNode always reports itself as ready and returns its own team as the winner,
+ * since a seeded team is the known participant before any match is played.
+ */
 public class TeamNode implements IBracketNode {
     private Team team;
 

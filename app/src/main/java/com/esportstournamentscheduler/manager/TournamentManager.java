@@ -13,18 +13,38 @@ import com.esportstournamentscheduler.domain.model.Tournament;
 import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 
 /**
- * Manages the operations related to a tournament, including team and player management.
+ * Central orchestrator for the esports tournament system.
+ * Manages the global pool of teams and tournaments, delegates team/player
+ * creation to the injected factories, enforces team naming rules via the
+ * active validation policy, and drives tournament lifecycle operations
+ * (start, resolve matches, advance bracket).
  */
 public class TournamentManager 
 {
+    /** The tournament currently in focus for bracket and match operations. */
     private Tournament currentlySelectedTournament;
+
+    /** All tournaments created this session, keyed by tournament name. */
     private Map<String, Tournament> tournaments;
+
+    /** Global pool of teams available for registration, keyed by team name. */
     private Map<String, Team> teams = new HashMap<>();
 
+    /** Factory used to construct new Team instances. */
     private final ITeamFactory teamFactory;
+
+    /** Factory used to construct new Player instances. */
     private final IPlayerFactory playerFactory;
+
+    /** Strategy controlling team name uniqueness and size validation rules. */
     private ITeamValidationPolicy teamValidationPolicy;
 
+    /**
+     * Constructs a TournamentManager with the specified factories and validation policy.
+     * @param teamFactory           Factory for creating Team instances.
+     * @param playerFactory         Factory for creating Player instances.
+     * @param teamValidationPolicy  Strategy for validating team names and sizes.
+     */
     public TournamentManager(ITeamFactory teamFactory, IPlayerFactory playerFactory, ITeamValidationPolicy teamValidationPolicy) {
         this.teamFactory = teamFactory;
         this.playerFactory = playerFactory;
@@ -32,6 +52,13 @@ public class TournamentManager
         tournaments = new HashMap<>();
     }
 
+    /**
+     * Creates a new team and adds it to the global team pool.
+     * Validates name uniqueness via the active policy before creation.
+     * @param teamName The desired name for the new team.
+     * @throws IllegalStateException    if the name is already taken (policy violation).
+     * @throws IllegalArgumentException if the name duplicates an existing team key.
+     */
     public void CreateTeam(String teamName) 
     {
         // Check if the teams name already exists in the tournament
@@ -44,12 +71,27 @@ public class TournamentManager
         teams.put(newTeam.getName(), newTeam);
     }
     
+    /**
+     * Creates a new Tournament and registers it in the tournament pool.
+     * The tournament is initialized with a max player count of 1; teams with
+     * any number of players are accepted once the flexible policy is active.
+     * @param tournamentName The unique display name for the tournament.
+     * @param gameName       The game being played.
+     * @param numOfTeams     The required number of participating teams (must be 4 or 8).
+     * @throws IllegalArgumentException if {@code numOfTeams} is not 4 or 8.
+     */
     public void CreateTournament(String tournamentName, String gameName, int numOfTeams) 
     {
         Tournament newTournament = new Tournament(tournamentName, numOfTeams, 1, gameName);
         tournaments.put(tournamentName, newTournament);
     }
 
+    /**
+     * Creates a player via the factory and appends them to the specified team's roster.
+     * @param teamName   The name of the team to add the player to.
+     * @param playerName The display name of the new player.
+     * @throws IllegalArgumentException if no team with {@code teamName} exists.
+     */
     public void addPlayerToTeam(String teamName, String playerName) {
         Team team = teams.get(teamName);
         
@@ -70,6 +112,10 @@ public class TournamentManager
         return tournaments;
     }
 
+    /**
+     * Prints all teams in the global pool to standard output, including their rosters.
+     * Outputs a message if no teams have been created yet.
+     */
     public void printAllTeams() {
         if (teams.isEmpty()) {
             System.out.println("No teams have been created yet.");
@@ -81,6 +127,12 @@ public class TournamentManager
         }
     }
 
+    /**
+     * Starts the currently selected tournament, generating the bracket and
+     * auto-starting all first-round matches.
+     * @throws IllegalStateException if no tournament has been selected, or if the
+     *                               tournament cannot be started (wrong state or team count).
+     */
     public void startActiveTournament() {
         if (this.currentlySelectedTournament == null) {
             throw new IllegalStateException("No tournament created yet.");
@@ -88,6 +140,18 @@ public class TournamentManager
         this.currentlySelectedTournament.startTournament();
     }
 
+    /**
+     * Records the result of a match by ID and advances the bracket.
+     * Accepts either "Match N" or just "N" as the match ID.
+     * After scores are finalized, {@link Tournament#advanceReadyMatches()} is called
+     * to start any next-round matches whose participants are now determined.
+     * @param matchId The match identifier (e.g., "Match 1" or "1").
+     * @param score1  Score for the left (first) participant.
+     * @param score2  Score for the right (second) participant.
+     * @throws IllegalStateException    if no tournament is active, or the match state
+     *                                  prevents recording (already completed, tied scores, etc.).
+     * @throws IllegalArgumentException if no match with the given ID exists.
+     */
     public void resolveMatch(String matchId, int score1, int score2) 
     {
         // Check if a tournament is active
@@ -132,7 +196,7 @@ public class TournamentManager
         currentlySelectedTournament.advanceReadyMatches();
     }
 
-    // --- NEW: AUTO-CREATE TOURNAMENT ---
+    // --- Bracket operations ---
 
     /**
      * Sets the currently selected tournament by tournament name.
@@ -187,7 +251,14 @@ public class TournamentManager
         tournament.removeTeam(teamName);
     }
 
-    // --- UPDATED: ASCII VISUAL BRACKET ---
+    // --- ASCII visual bracket ---
+
+    /**
+     * Prints the ASCII bracket for the currently selected tournament to standard output,
+     * including match states, current winners, and the overall champion once the
+     * final match is resolved. Calls {@link Tournament#endTournament()} when a champion
+     * is determined.
+     */
    public void printVisualBracket() {
     if (currentlySelectedTournament == null || currentlySelectedTournament.getBracketRounds().isEmpty()) {
         System.out.println("Bracket not generated yet.");
@@ -221,7 +292,14 @@ public class TournamentManager
     System.out.println();
 }
 
-private List<String> buildTreeBracketLines() {
+    /**
+     * Builds the bracket as a list of padded strings ready for line-by-line printing.
+     * Uses a character canvas approach: each bracket position is computed from its
+     * row/column index, connectors drawn with ASCII art (|, -, +), and text labels
+     * placed at the midpoint row of each match.
+     * @return An ordered list of trimmed strings representing the bracket display.
+     */
+    private List<String> buildTreeBracketLines() {
     List<List<Match>> rounds = currentlySelectedTournament.getBracketRounds();
     int teamCount = currentlySelectedTournament.getMaxTeams();
 
@@ -296,7 +374,15 @@ private List<String> buildTreeBracketLines() {
     return out;
 }
 
-private void putText(char[][] canvas, int row, int col, String text) {
+    /**
+     * Writes {@code text} onto the character canvas at the given row and column.
+     * Silently skips characters that fall outside the canvas bounds.
+     * @param canvas The 2D character grid being built.
+     * @param row    Target row index.
+     * @param col    Starting column index.
+     * @param text   The text to place on the canvas.
+     */
+    private void putText(char[][] canvas, int row, int col, String text) {
     if (row < 0 || row >= canvas.length) return;
     for (int i = 0; i < text.length() && col + i < canvas[row].length; i++) {
         if (col + i >= 0) {
@@ -305,13 +391,26 @@ private void putText(char[][] canvas, int row, int col, String text) {
     }
 }
 
-private String fit(String value, int width) {
+    /**
+     * Truncates or left-pads {@code value} to exactly {@code width} characters.
+     * If truncated, the last character is replaced with '.' to indicate overflow.
+     * @param value The string to fit.
+     * @param width The exact desired character width.
+     * @return A string of exactly {@code width} characters.
+     */
+    private String fit(String value, int width) {
     if (value == null) value = "";
     if (value.length() > width) return value.substring(0, width - 1) + ".";
     return String.format("%-" + width + "s", value);
 }
 
-private String rtrim(String s) {
+    /**
+     * Removes trailing space characters from a string.
+     * Used to clean up canvas rows before printing.
+     * @param s The string to trim.
+     * @return The string with all trailing spaces removed.
+     */
+    private String rtrim(String s) {
     int end = s.length();
     while (end > 0 && s.charAt(end - 1) == ' ') end--;
     return s.substring(0, end);

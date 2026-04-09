@@ -4,22 +4,35 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * A simple menu selector that displays options and lets user select via number input.
- * Enhanced with ANSI colors for better visual appeal.
+ * ANSI-colored numbered menu renderer for the CLI.
+ * Displays a titled list of options, reads a numeric choice from the user,
+ * and returns the zero-based index of the selected option.
+ * Loops until a valid selection is entered.
  */
 public class SimpleMenuSelector {
+    /** The list of option labels to display, in order. */
     private List<String> options;
+
+    /** Scanner used to read user input from stdin. */
     private Scanner scanner;
-    
-    // ANSI Color codes
-    private static final String RESET = "\u001B[0m";
+
+    // ANSI escape codes for terminal color formatting.
+    private static final String RESET       = "\u001B[0m";
     private static final String BRIGHT_CYAN = "\u001B[96m";
-    private static final String BRIGHT_RED = "\u001B[91m";
+    private static final String BRIGHT_RED  = "\u001B[91m";
     private static final String BRIGHT_YELLOW = "\u001B[93m";
-    private static final String DARK_GRAY = "\u001B[90m";
-    private static final String WHITE = "\u001B[97m";
+    private static final String DARK_GRAY   = "\u001B[90m";
+    private static final String WHITE       = "\u001B[97m";
+
+    /** The heading displayed above the numbered options list. Defaults to "MAIN MENU". */
     private String menuHeading;
     
+    /**
+     * Constructs a new SimpleMenuSelector.
+     * @param options     The ordered list of option labels to display.
+     * @param scanner     The scanner to read user input from.
+     * @param menuHeading The heading shown above the options, or {@code null} to use "MAIN MENU".
+     */
     public SimpleMenuSelector(List<String> options, Scanner scanner, String menuHeading) {
         this.options = options;
         this.scanner = scanner;

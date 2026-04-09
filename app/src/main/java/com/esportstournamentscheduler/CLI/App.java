@@ -14,11 +14,23 @@ import com.esportstournamentscheduler.domain.policy.FlexibleTeamValidationPolicy
 import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
 import com.esportstournamentscheduler.manager.TournamentManager;
 
+/**
+ * Main entry point and CLI controller for the Esports Tournament Scheduler.
+ * Renders all user-facing menus via {@link SimpleMenuSelector}, reads input
+ * from stdin, and delegates all business logic to {@link TournamentManager}.
+ */
 public class App {
+    /** Shared scanner reading from stdin for the full application session. */
     private Scanner scanner = new Scanner(System.in);
+
+    /** Central manager handling all tournament, team, and player operations. */
     private TournamentManager manager;
 
 
+    /**
+     * Constructs the application, wiring together the standard factories and
+     * the flexible team validation policy into a new {@link TournamentManager}.
+     */
     public App() {
        ITeamFactory teamFactory = new StandardTeamFactory();
        IPlayerFactory playerFactory = new StandardPlayerFactory();
@@ -27,6 +39,10 @@ public class App {
     }
     
 
+    /**
+     * Launches the main application loop, displaying the top-level menu and
+     * routing user selections to the appropriate screen method until the user quits.
+     */
 public void start() {
         boolean running = true;
 
