@@ -1,6 +1,6 @@
 package com.esportstournamentscheduler.domain.model;
+import com.esportstournamentscheduler.domain.policy.FlexibleTeamValidationPolicy;
 import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
-import com.esportstournamentscheduler.domain.policy.StrictTeamValidationPolicy;
 import com.esportstournamentscheduler.domain.policy.ITournamentValidationPolicy;
 import com.esportstournamentscheduler.domain.policy.TournamentValidationPolicy;
 import com.esportstournamentscheduler.domain.bracket.IBracketNode;
@@ -16,7 +16,6 @@ public class Tournament
     private final String name;                  // Tournament name
     private final String game;                  // Game being played in the tournament
     private final List<Team> registeredTeams;   // List of teams registered for the tournament
-    private final List<Match> matches;          // List of matches in the tournament (can be used to track match results and scheduling)
     private Map<String, Team> teamMap;          // Holds the teams - Uses map for quick lookup by ID
     
     private final int REQUIRED_NUMBER_TEAMS;    // The required number of teams for the tournament
@@ -54,11 +53,10 @@ public class Tournament
         this.name = name;
         this.game = game;
 
-        this.teamValidationPolicy = new StrictTeamValidationPolicy(); // Default to strict policy, can be changed later
+        this.teamValidationPolicy = new FlexibleTeamValidationPolicy(); // Default to strict policy, can be changed later
         this.tournamentValidationPolicy = new TournamentValidationPolicy(); // Default tournament validation policy
         
         this.registeredTeams = new ArrayList<>();
-        this.matches = new ArrayList<>();        
         this.teamMap = new HashMap<>();
 
         this.state = TournamentState.REGISTRATION; 
@@ -103,7 +101,54 @@ public class Tournament
         }
 
         this.state = TournamentState.IN_PROGRESS;
+        
+        // Auto-start all first-round matches
+        if (!bracketRounds.isEmpty()) {
+            List<Match> firstRound = bracketRounds.get(0);
+            for (Match match : firstRound) {
+                try {
+                    match.startMatch();
+                } catch (IllegalStateException e) {
+                    // If a match can't start, log it but continue with others
+                    System.out.println("Warning: Could not start " + match.getMatchId() + " - " + e.getMessage());
+                }
+            }
+        }
 
+    }
+
+    /**
+     * Advances the bracket by starting all matches in the next round that are ready.
+     * A match is ready when both its child matches have completed and have winners.
+     * This should be called after recording match results to cascade the bracket progression.
+     */
+    public void advanceReadyMatches() {
+        if (bracketRounds.isEmpty()) {
+            return;
+        }
+        
+        // Iterate through each round except the last (finals)
+        for (int roundIndex = 0; roundIndex < bracketRounds.size() - 1; roundIndex++) {
+            List<Match> currentRound = bracketRounds.get(roundIndex);
+            List<Match> nextRound = bracketRounds.get(roundIndex + 1);
+            
+            // Check if all matches in current round are completed
+            boolean allCurrentRoundComplete = currentRound.stream()
+                .allMatch(m -> m.getState() == Match.MatchState.COMPLETED);
+            
+            // If current round is complete, start ready matches in next round
+            if (allCurrentRoundComplete) {
+                for (Match match : nextRound) {
+                    if (match.getState() == Match.MatchState.PENDING && match.isReady()) {
+                        try {
+                            match.startMatch();
+                        } catch (IllegalStateException e) {
+                            // Match not ready yet, skip it
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void endTournament() {
@@ -135,10 +180,6 @@ public class Tournament
         return registeredTeams; 
     }
 
-    public List<Match> getMatches() { 
-        return matches; 
-    }
-    
     public String getName() { 
         return name; 
     }
@@ -173,12 +214,6 @@ public class Tournament
         Team teamToRemove = teamMap.get(teamName);
         registeredTeams.remove(teamToRemove);
         teamMap.remove(teamName);
-    }
-
-     public void clearTeams() {
-        if(state != TournamentState.REGISTRATION) throw new IllegalStateException("Tournament must be in registration phase to clear teams.");
-        registeredTeams.clear();
-        teamMap.clear();
     }
 
     

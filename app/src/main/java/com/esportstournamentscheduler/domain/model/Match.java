@@ -11,7 +11,7 @@ public class Match implements IBracketNode {
     
     private Team winner;
     
-    public enum MatchState { PENDING, COMPLETED }
+    public enum MatchState { PENDING, IN_PROGRESS, COMPLETED }
     private MatchState state;
 
     // Constructor
@@ -30,7 +30,7 @@ public class Match implements IBracketNode {
     public IBracketNode getRightNode() { 
         return rightChild; 
     }
-    
+
     @Override
     public Team getWinner() { 
         return winner; 
@@ -50,6 +50,18 @@ public class Match implements IBracketNode {
     }
 
     // --- Core Logic ---
+    public void startMatch() {
+        if (state != MatchState.PENDING) {
+            throw new IllegalStateException("Match cannot be started. Current state: " + state);
+        }
+        
+        if (!isReady()) {
+            throw new IllegalStateException("Match cannot start. Both teams must be determined from previous rounds.");
+        }
+        
+        this.state = MatchState.IN_PROGRESS;
+    }
+
     public void finalizeScores(int score1, int score2) {
         if (!isReady()) throw new IllegalStateException("Match waiting on previous rounds.");
         if (state == MatchState.COMPLETED) throw new IllegalStateException("Match already completed.");

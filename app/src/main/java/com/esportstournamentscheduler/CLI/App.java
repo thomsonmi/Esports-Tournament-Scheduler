@@ -18,6 +18,7 @@ public class App {
     private Scanner scanner = new Scanner(System.in);
     private TournamentManager manager;
 
+
     public App() {
        ITeamFactory teamFactory = new StandardTeamFactory();
        IPlayerFactory playerFactory = new StandardPlayerFactory();
@@ -28,46 +29,14 @@ public class App {
 
 public void start() {
         boolean running = true;
-        // PRE-POPULATE SOME TEAMS & PLAYERS FOR DEMO PURPOSES
-    // manager.CreateTeam("Alpha");
-    // manager.addPlayerToTeam("Alpha", "A1");
-    // manager.addPlayerToTeam("Alpha", "A2");
 
-    // manager.CreateTeam("Bravo");
-    // manager.addPlayerToTeam("Bravo", "B1");
-    // manager.addPlayerToTeam("Bravo", "B2");
-
-    // manager.CreateTeam("Crimson");
-    // manager.addPlayerToTeam("Crimson", "C1");
-    // manager.addPlayerToTeam("Crimson", "C2");
-
-    // manager.CreateTeam("Delta");
-    // manager.addPlayerToTeam("Delta", "D1");
-    // manager.addPlayerToTeam("Delta", "D2");
-/* 
-    manager.CreateTeam("Echo");
-    manager.addPlayerToTeam("Echo", "E1");
-    manager.addPlayerToTeam("Echo", "E2");
-
-    manager.CreateTeam("Foxtrot");
-    manager.addPlayerToTeam("Foxtrot", "F1");
-    manager.addPlayerToTeam("Foxtrot", "F2");
-
-    manager.CreateTeam("Gamma");
-    manager.addPlayerToTeam("Gamma", "G1");
-    manager.addPlayerToTeam("Gamma", "G2");
-
-    manager.CreateTeam("Hotel");
-    manager.addPlayerToTeam("Hotel", "H1");
-    manager.addPlayerToTeam("Hotel", "H2");
-*/
-    // Use new simple menu selector
+        // Use new simple menu selector
         List<String> menuOptions = Arrays.asList(
             "Create Tournament",
             "Select Tournament",
             "Create Team",
+            "Bulk Create Teams",
             "View All Teams",
-            "View Tournaments",
             "Quit"
         );
         while (running) 
@@ -95,7 +64,8 @@ public void start() {
                     if (selectedTournament != null) 
                     {
                         int tournamentChoice = 0;
-                        while(tournamentChoice != 6) 
+                        boolean exitFlag = false;
+                        while(!exitFlag) 
                         {
                             tournamentChoice = displayTournamentMenu(selectedTournament);
             
@@ -108,36 +78,53 @@ public void start() {
                                     displayRegisteredTeams(selectedTournament);
                                     break;
                                 case 2: // Add Team to Tournament
-                                    // logic here
+                                    displayAddTeamToTournament(selectedTournament);
                                     break;
-                                case 3: // Add team to tournament (register team)
+                                case 3: // Remove team from tournament
+                                    displayRemoveTeamFromTournament(selectedTournament);
                                     break;
-                                case 4: // Remove team from tournament
-                                    break;
-                                case 5: // Start Tournament
-                                    try {
+                                case 4: // Start Tournament
+                                    try 
+                                    {
                                         manager.setSelectedTournament(selectedTournament);
                                         manager.startActiveTournament();
                                         System.out.println("Tournament '" + selectedTournament + "' has been started.");
-                                    } catch (IllegalStateException e) {
+                                    } 
+                                    catch (IllegalStateException e) 
+                                    {
                                         System.out.println("Error: " + e.getMessage());
                                     }
+                                    catch (Exception e) 
+                                    {
+                                        System.out.println("An unexpected error occurred: " + e.getMessage());
+                                    }
                                     break;
-                                case 6: // Back to Main Menu
-                                    // automatically returns to main menu
+                                
+                                case 5: // Record Match Results
+                                    displayRecordMatchResults(selectedTournament);
                                     break;
-                                case 8: // Display Bracket
+                                
+                                case 6: // Display Bracket
                                     displayTournamentBracket(selectedTournament);
+                                    break;
+                                case 7: // Back to Main Menu
+                                    exitFlag = true;
                                     break;
                                 default:
                                     System.out.println("Invalid option. Please select a valid menu item.");
+                            }
+                            
+                            if (!exitFlag) 
+                            {
+                                System.out.print("Press ENTER to continue...");
+                                scanner.nextLine();
                             }
                         }
                     }
 
                     break;
                     
-                case 2:// Create Team
+                case 2: // Create Team
                     System.out.print("Enter the name of the new team: ");
                     String teamName = scanner.nextLine();
                     try {
@@ -145,14 +132,21 @@ public void start() {
                         System.out.println("Success! Team '" + teamName + "' has been created.");
                         
                         System.out.print("How many players are on your team? ");
-                        if (!scanner.hasNextInt()) {
+                        if (!scanner.hasNextInt()) 
+                        {
                             System.out.println("Invalid input. Please enter a number.");
                             scanner.next(); 
                             continue; 
                         }
                         
                         int numPlayers = scanner.nextInt();
-                        scanner.nextLine(); // Consume newline
+                        
+                        if(numPlayers <= 1) {
+                            System.out.println("A team must have at least 1 player. Setting number of players to 1.");
+                            numPlayers = 1;
+                        }
+
+                        scanner.nextLine();
                         
                         // for demo purposes, we will auto-generate player names instead of asking the user to input each one
                         System.out.println("***Auto Adding***" + numPlayers + " Players.");
@@ -174,23 +168,21 @@ public void start() {
                         System.out.println("Error: " + e.getMessage());
                     }
                     break;
-                case 3: // View All Teams
+                case 3: // Bulk Create Teams
+                    displayBulkCreateTeams();
+                    break;
+                case 4: // View All Teams
                     manager.printAllTeams();
-                    break;
-                    
-                case 4: // View Tournaments
-                // convert map to list of team names for menu selector
-                    displayExistingTournaments();                   
-
-                    break;
-
+                    break;                    
+                
                 case 5: // Quit
                     running = false;
                     System.out.println("Exiting application. Goodbye!");
-                    break;
+                    break;                    
             }
             
-            if (running && choice != 0) {
+            if (running) 
+            {
                 System.out.print("Press ENTER to continue...");
                 scanner.nextLine();
             }
@@ -216,28 +208,7 @@ public void start() {
         System.out.println("=============================\n");
         
         return new String[]{tournamentName, gameName, numberOfTeams};
-    }
-    
-    /**
-     * Displays all existing tournaments in a formatted view.
-     */
-    private void displayExistingTournaments() {
-        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
-        
-        System.out.println("\n=== Existing Tournaments ===");
-        
-        if (tournaments.isEmpty()) {
-            System.out.println("No tournaments have been created yet.");
-        } else {
-            int index = 1;
-            for (String tournamentName : tournaments.keySet()) {
-                System.out.println(index + ". " + tournamentName);
-                index++;
-            }
-        }
-        
-        System.out.println("=============================\n");
-    }
+    }   
     
     /**
      * Displays a numbered list of tournaments and allows the user to select one.
@@ -253,11 +224,31 @@ public void start() {
             return null;
         }
         
-        List<String> tournamentList = new ArrayList<>(tournaments.keySet());
-        SimpleMenuSelector tournamentMenu = new SimpleMenuSelector(tournamentList, scanner, "SELECT TOURNAMENT");
+        List<String> tournamentNames = new ArrayList<>(tournaments.keySet());
+        List<String> displayList = new ArrayList<>();
+        
+        // Build display list with tournament name and state
+        for (String name : tournamentNames) {
+            Tournament tournament = tournaments.get(name);
+            String state = "";
+            
+            if (tournament.isRegistrationOpen()) {
+                state = "Registration Open";
+            } else if (tournament.isInProgress()) {
+                state = "In Progress";
+            } else if (tournament.isCompleted()) {
+                state = "Completed";
+            } else {
+                state = "Unknown State";
+            }
+            
+            displayList.add(name + " [" + state + "]");
+        }
+        
+        SimpleMenuSelector tournamentMenu = new SimpleMenuSelector(displayList, scanner, "SELECT TOURNAMENT");
         int selectedIndex = tournamentMenu.selectOption();
         
-        return tournamentList.get(selectedIndex);
+        return tournamentNames.get(selectedIndex);
     }
     
     /**
@@ -273,6 +264,7 @@ public void start() {
             "Remove Team from Tournament",
             "Start Tournament",
             "Record Match Results",
+            "View Tournament Bracket",
             "Back to Main Menu"
         );
         
@@ -400,6 +392,305 @@ public void start() {
         
         System.out.println("Tournament State: " + tourneyState);
         System.out.println();
+    }
+    
+    /**
+     * Displays a screen for adding teams to a tournament.
+     * Shows available teams not yet registered and allows user to select one to add.
+     * @param tournamentName The name of the tournament to add teams to
+     */
+    private void displayAddTeamToTournament(String tournamentName) {
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
+        Tournament tournament = tournaments.get(tournamentName);
+        
+        if (tournament == null) {
+            System.out.println("\nTournament '" + tournamentName + "' not found.");
+            return;
+        }
+        
+        java.util.Map<String, com.esportstournamentscheduler.domain.model.Team> availableTeams = manager.getTeams();
+        List<com.esportstournamentscheduler.domain.model.Team> registeredTeams = tournament.getRegisteredTeams();
+        
+        // Filter out teams already registered
+        List<com.esportstournamentscheduler.domain.model.Team> unregisteredTeams = new ArrayList<>();
+        for (com.esportstournamentscheduler.domain.model.Team team : availableTeams.values()) {
+            if (!registeredTeams.contains(team)) {
+                unregisteredTeams.add(team);
+            }
+        }
+        
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("ADD TEAM TO TOURNAMENT - " + tournamentName);
+        System.out.println("=".repeat(50));
+        
+        if (unregisteredTeams.isEmpty()) {
+            System.out.println("No unregistered teams available.");
+            System.out.println("All created teams are already registered or no teams exist yet.");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        // Check if tournament is full
+        if (registeredTeams.size() >= tournament.getMaxTeams()) {
+            System.out.println("Tournament is full! (" + registeredTeams.size() + " / " + tournament.getMaxTeams() + " teams)");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        // Display available teams
+        List<String> teamNames = new ArrayList<>();
+        for (com.esportstournamentscheduler.domain.model.Team team : unregisteredTeams) {
+            teamNames.add(team.getName() + " (" + team.getPlayers().size() + " players)");
+        }
+        teamNames.add("Cancel");
+        
+        SimpleMenuSelector menu = new SimpleMenuSelector(teamNames, scanner, null);
+        int selectedIndex = menu.selectOption();
+        
+        // Handle cancel option
+        if (selectedIndex == unregisteredTeams.size()) {
+            System.out.println("Cancelled adding team.");
+            return;
+        }
+        
+        // Add the selected team
+        com.esportstournamentscheduler.domain.model.Team selectedTeam = unregisteredTeams.get(selectedIndex);
+        try {
+            manager.registerTeamToTournament(tournamentName, selectedTeam.getName());
+            System.out.println("\nSuccess! '" + selectedTeam.getName() + "' has been added to the tournament.");
+            System.out.println("Teams registered: " + tournament.getRegisteredTeams().size() + " / " + tournament.getMaxTeams());
+            System.out.println("=".repeat(50) + "\n");
+        } catch (Exception e) {
+            System.out.println("\nError adding team: " + e.getMessage());
+            System.out.println("=".repeat(50) + "\n");
+        }
+    }
+    
+    /**
+     * Displays a screen for removing a team from a tournament.
+     * Shows registered teams and allows user to select one to remove.
+     * @param tournamentName The name of the tournament
+     */
+    private void displayRemoveTeamFromTournament(String tournamentName) {
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
+        Tournament tournament = tournaments.get(tournamentName);
+        
+        if (tournament == null) {
+            System.out.println("\nTournament '" + tournamentName + "' not found.");
+            return;
+        }
+        
+        List<com.esportstournamentscheduler.domain.model.Team> registeredTeams = tournament.getRegisteredTeams();
+        
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("REMOVE TEAM FROM TOURNAMENT - " + tournamentName);
+        System.out.println("=".repeat(50));
+        
+        if (registeredTeams.isEmpty()) {
+            System.out.println("No teams registered in this tournament.");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        // Display registered teams
+        List<String> teamNames = new ArrayList<>();
+        for (com.esportstournamentscheduler.domain.model.Team team : registeredTeams) {
+            teamNames.add(team.getName() + " (" + team.getPlayers().size() + " players)");
+        }
+        teamNames.add("Cancel");
+        
+        SimpleMenuSelector menu = new SimpleMenuSelector(teamNames, scanner, null);
+        int selectedIndex = menu.selectOption();
+        
+        // Handle cancel option
+        if (selectedIndex == registeredTeams.size()) {
+            System.out.println("Cancelled removing team.");
+            return;
+        }
+        
+        // Remove the selected team
+        com.esportstournamentscheduler.domain.model.Team selectedTeam = registeredTeams.get(selectedIndex);
+        try {
+            manager.removeTeamFromTournament(tournamentName, selectedTeam.getName());
+            System.out.println("\nSuccess! '" + selectedTeam.getName() + "' has been removed from the tournament.");
+            System.out.println("Teams registered: " + tournament.getRegisteredTeams().size() + " / " + tournament.getMaxTeams());
+            System.out.println("=".repeat(50) + "\n");
+        } catch (IllegalStateException e) {
+            System.out.println("\nError removing team: " + e.getMessage());
+            System.out.println("(Tournament must be in registration phase to remove teams)");
+            System.out.println("=".repeat(50) + "\n");
+        } catch (Exception e) {
+            System.out.println("\nError removing team: " + e.getMessage());
+            System.out.println("=".repeat(50) + "\n");
+        }
+    }
+    
+    /**
+     * Displays a screen for recording match results.
+     * Allows user to select a match and enter scores for both teams.
+     * @param tournamentName The name of the tournament
+     */
+    private void displayRecordMatchResults(String tournamentName) {
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
+        Tournament tournament = tournaments.get(tournamentName);
+        
+        if (tournament == null) {
+            System.out.println("\nTournament '" + tournamentName + "' not found.");
+            return;
+        }
+        
+        if (tournament.getBracketRounds().isEmpty()) {
+            System.out.println("\n" + "=".repeat(50));
+            System.out.println("RECORD MATCH RESULTS");
+            System.out.println("=".repeat(50));
+            System.out.println("No matches available. Start the tournament first.");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("RECORD MATCH RESULTS - " + tournamentName);
+        System.out.println("=".repeat(50));
+        
+        // Display all available matches
+        System.out.println("\nAvailable Matches:\n");
+        int matchCount = 0;
+        for (java.util.List<com.esportstournamentscheduler.domain.model.Match> round : tournament.getBracketRounds()) {
+            for (com.esportstournamentscheduler.domain.model.Match match : round) {
+                if (match.getState() != com.esportstournamentscheduler.domain.model.Match.MatchState.COMPLETED) {
+                    System.out.println(match.toString());
+                    matchCount++;
+                }
+            }
+        }
+        
+        if (matchCount == 0) {
+            System.out.println("All matches are completed!");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        System.out.println("\nEnter match details:");
+        
+        // Get match ID
+        System.out.print("Enter Match ID (e.g., 'Match 1' or just '1'): ");
+        String matchId = scanner.nextLine();
+        
+        // Get team 1 score
+        System.out.print("Enter Team 1 score: ");
+        if (!scanner.hasNextInt()) {
+            System.out.println("Invalid input. Please enter a valid number.");
+            scanner.nextLine();
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        int score1 = scanner.nextInt();
+        
+        // Get team 2 score
+        System.out.print("Enter Team 2 score: ");
+        if (!scanner.hasNextInt()) {
+            System.out.println("Invalid input. Please enter a valid number.");
+            scanner.nextLine();
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        int score2 = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+        
+        // Record the match result
+        try {
+            manager.setSelectedTournament(tournamentName);
+            manager.resolveMatch(matchId, score1, score2);
+            System.out.println("\nSuccess! Match result recorded.");
+            System.out.println("Bracket has been advanced.");
+            System.out.println("=".repeat(50) + "\n");
+        } catch (IllegalArgumentException e) {
+            System.out.println("\nError: " + e.getMessage());
+            System.out.println("=".repeat(50) + "\n");
+        } catch (IllegalStateException e) {
+            System.out.println("\nError: " + e.getMessage());
+            System.out.println("=".repeat(50) + "\n");
+        }
+    }
+    
+    /**
+     * Displays a screen for bulk creating multiple teams.
+     * Allows user to specify number of teams and players per team.
+     * Teams are auto-generated with names (Team 1, Team 2, etc.) and auto-populated with players.
+     */
+    private void displayBulkCreateTeams() {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("BULK CREATE TEAMS");
+        System.out.println("=".repeat(50));
+        
+        // Get number of teams
+        System.out.print("How many teams would you like to create? ");
+        if (!scanner.hasNextInt()) {
+            System.out.println("Invalid input. Please enter a number.");
+            scanner.nextLine();
+            return;
+        }
+        int numTeams = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+        
+        if (numTeams <= 0) {
+            System.out.println("Number of teams must be greater than 0.");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        // Get number of players per team
+        System.out.print("How many players per team? ");
+        if (!scanner.hasNextInt()) {
+            System.out.println("Invalid input. Please enter a number.");
+            scanner.nextLine();
+            return;
+        }
+        int numPlayers = scanner.nextInt();
+        scanner.nextLine(); // Consume newline
+        
+        if (numPlayers <= 0) {
+            System.out.println("Number of players must be greater than 0.");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+        
+        // Create teams
+        int successCount = 0;
+        int failureCount = 0;
+        
+        System.out.println("\nCreating " + numTeams + " teams with " + numPlayers + " players each...\n");
+        
+        for (int i = 1; i <= numTeams; i++) {
+            String teamName = "Team " + i;
+            
+            try {
+                manager.CreateTeam(teamName);
+                System.out.println("Created: " + teamName);
+                
+                // Add players to the team
+                for (int j = 1; j <= numPlayers; j++) {
+                    String playerName = "Player " + j;
+                    try {
+                        manager.addPlayerToTeam(teamName, playerName);
+                    } catch (IllegalStateException e) {
+                        System.out.println("  Warning: Could not add " + playerName + " - " + e.getMessage());
+                        break;
+                    }
+                }
+                
+                successCount++;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error creating " + teamName + ": " + e.getMessage());
+                failureCount++;
+            }
+        }
+        
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("Bulk Team Creation Summary:");
+        System.out.println("  Successfully created: " + successCount + " teams");
+        System.out.println("  Failed to create: " + failureCount + " teams");
+        System.out.println("=".repeat(50) + "\n");
     }
 
     public static void main(String[] args) {

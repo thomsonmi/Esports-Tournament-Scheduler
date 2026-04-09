@@ -1,6 +1,5 @@
 package com.esportstournamentscheduler.manager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +46,7 @@ public class TournamentManager
     
     public void CreateTournament(String tournamentName, String gameName, int numOfTeams) 
     {
-        Tournament newTournament = new Tournament(tournamentName, numOfTeams, 5, gameName);
+        Tournament newTournament = new Tournament(tournamentName, numOfTeams, 1, gameName);
         tournaments.put(tournamentName, newTournament);
     }
 
@@ -82,42 +81,6 @@ public class TournamentManager
         }
     }
 
-    public void clearTeams() {
-        teams.clear();
-    }
-
-    public void removeTeam(String teamName) {
-        if(!teams.containsKey(teamName)) throw new IllegalArgumentException("Team name does not exist.");
-        teams.remove(teamName);
-    }
-
-    public void ChangePolicy(ITeamValidationPolicy newPolicy) 
-    {
-        if(newPolicy == null) throw new IllegalArgumentException("Validation policy cannot be null.");
-        this.teamValidationPolicy = newPolicy;
-    }
-
-    // --- BRACKET ENGINE HOOKS ---
-    public void createTournamentFromSavedTeams(String tournamentName, String gameName) {
-        int teamCount = teams.size();
-        
-        // 1. Validate we have a legal number of teams for a bracket
-        if (teamCount != 4 && teamCount != 8) {
-            throw new IllegalStateException("You must have exactly 4 or 8 teams saved to create a tournament. You currently have " + teamCount + ".");
-        }
-
-        // 2. Create the tournament dynamically based on how many teams exist
-        // (Assuming a default of 5 players max per team, but you can change this!)
-        this.currentlySelectedTournament = new Tournament(tournamentName, teamCount, 5, gameName);
-
-        // 3. Auto-enroll every saved team into the new tournament
-        for (Team team : teams.values()) {
-            this.currentlySelectedTournament.registerTeam(team);
-        }
-        
-        System.out.println("Successfully created '" + tournamentName + "' and auto-enrolled all " + teamCount + " teams!");
-    }
-    
     public void startActiveTournament() {
         if (this.currentlySelectedTournament == null) {
             throw new IllegalStateException("No tournament created yet.");
@@ -164,6 +127,9 @@ public class TournamentManager
         }
 
         targetMatch.finalizeScores(score1, score2);
+        
+        // Advance the bracket by starting any matches in the next round that are now ready
+        currentlySelectedTournament.advanceReadyMatches();
     }
 
     // --- NEW: AUTO-CREATE TOURNAMENT ---
@@ -182,6 +148,43 @@ public class TournamentManager
         {
             throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
         }
+    }
+
+    /**
+     * Registers a team to a tournament by their names.
+     * @param tournamentName The name of the tournament to add the team to
+     * @param teamName The name of the team to register
+     * @throws IllegalArgumentException if tournament or team is not found
+     */
+    public void registerTeamToTournament(String tournamentName, String teamName) {
+        if (!tournaments.containsKey(tournamentName)) {
+            throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
+        }
+        
+        if (!teams.containsKey(teamName)) {
+            throw new IllegalArgumentException("Team '" + teamName + "' not found.");
+        }
+        
+        Tournament tournament = tournaments.get(tournamentName);
+        Team team = teams.get(teamName);
+        
+        tournament.registerTeam(team);
+    }
+
+    /**
+     * Removes a team from a tournament by their names.
+     * @param tournamentName The name of the tournament to remove the team from
+     * @param teamName The name of the team to unregister
+     * @throws IllegalArgumentException if tournament or team is not found
+     * @throws IllegalStateException if tournament is not in registration phase
+     */
+    public void removeTeamFromTournament(String tournamentName, String teamName) {
+        if (!tournaments.containsKey(tournamentName)) {
+            throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
+        }
+        
+        Tournament tournament = tournaments.get(tournamentName);
+        tournament.removeTeam(teamName);
     }
 
     // --- UPDATED: ASCII VISUAL BRACKET ---

@@ -16,7 +16,6 @@ public class SimpleMenuSelector {
     private static final String BRIGHT_CYAN = "\u001B[96m";
     private static final String BRIGHT_RED = "\u001B[91m";
     private static final String BRIGHT_YELLOW = "\u001B[93m";
-    private static final String BRIGHT_GREEN = "\u001B[92m";
     private static final String DARK_GRAY = "\u001B[90m";
     private static final String WHITE = "\u001B[97m";
     private String menuHeading;
