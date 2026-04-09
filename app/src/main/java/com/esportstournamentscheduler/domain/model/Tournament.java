@@ -236,6 +236,19 @@ public class Tournament
     }
 
     /**
+     * Swaps the team validation policy used during team registration.
+     * Can only be changed while the tournament is in the REGISTRATION phase.
+     * @param policy The new policy to apply. Must not be null.
+     * @throws IllegalStateException    if the tournament has already started.
+     * @throws IllegalArgumentException if {@code policy} is null.
+     */
+    public void setTeamValidationPolicy(ITeamValidationPolicy policy) {
+        if (state != TournamentState.REGISTRATION) throw new IllegalStateException("Policy can only be changed during the registration phase.");
+        if (policy == null) throw new IllegalArgumentException("Policy cannot be null.");
+        this.teamValidationPolicy = policy;
+    }
+
+    /**
      * Removes a registered team from the tournament by name.
      * @param teamName The name of the team to remove.
      * @throws IllegalStateException    if the tournament is not in REGISTRATION phase.

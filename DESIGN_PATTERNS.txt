@@ -20,8 +20,8 @@ Where it is used:
      Strategies:
        - FlexibleTeamValidationPolicy  (allows 1 to max players)
        - StrictTeamValidationPolicy    (requires exact player count)
-     Context   : TournamentManager (holds the active policy)
-                 Tournament         (uses it inside registerTeam)
+     Context   : TournamentManager     (holds the active policy)
+                 Tournament            (uses it inside registerTeam)
 
      The active policy is injected into TournamentManager via
      its constructor. Calling registerTeam() delegates size and

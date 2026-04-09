@@ -12,6 +12,7 @@ import com.esportstournamentscheduler.application.factory.StandardTeamFactory;
 import com.esportstournamentscheduler.domain.model.Tournament;
 import com.esportstournamentscheduler.domain.policy.FlexibleTeamValidationPolicy;
 import com.esportstournamentscheduler.domain.policy.ITeamValidationPolicy;
+import com.esportstournamentscheduler.domain.policy.StrictTeamValidationPolicy;
 import com.esportstournamentscheduler.manager.TournamentManager;
 
 /**
@@ -65,7 +66,12 @@ public void start() {
                     String[] tournamentData = promptForTournamentCreation();
                     try 
                     {
-                        manager.CreateTournament(tournamentData[0], tournamentData[1], Integer.parseInt(tournamentData[2]));
+                        manager.CreateTournament(
+                            tournamentData[0],
+                            tournamentData[1],
+                            Integer.parseInt(tournamentData[2]),
+                            Integer.parseInt(tournamentData[3])
+                        );
                         System.out.println("Tournament '" + tournamentData[0] + "' created successfully.");
                     } 
                     catch (IllegalArgumentException e) 
@@ -99,7 +105,11 @@ public void start() {
                                 case 3: // Remove team from tournament
                                     displayRemoveTeamFromTournament(selectedTournament);
                                     break;
-                                case 4: // Start Tournament
+                                case 4: // Change Validation Policy
+                                    displayChangePolicy(selectedTournament);
+                                    break;
+
+                                case 5: // Start Tournament
                                     try 
                                     {
                                         manager.setSelectedTournament(selectedTournament);
@@ -116,14 +126,14 @@ public void start() {
                                     }
                                     break;
                                 
-                                case 5: // Record Match Results
+                                case 6: // Record Match Results
                                     displayRecordMatchResults(selectedTournament);
                                     break;
                                 
-                                case 6: // Display Bracket
+                                case 7: // Display Bracket
                                     displayTournamentBracket(selectedTournament);
                                     break;
-                                case 7: // Back to Main Menu
+                                case 8: // Back to Main Menu
                                     exitFlag = true;
                                     break;
                                 default:
@@ -207,7 +217,7 @@ public void start() {
     
     /**
      * Prompts the user for tournament creation details.
-     * @return A String array containing [tournamentName, gameName, numberOfTeams]
+     * @return A String array containing [tournamentName, gameName, numberOfTeams, maxPlayersPerTeam]
      */
     private String[] promptForTournamentCreation() {
         System.out.println("\n=== Create New Tournament ===");
@@ -220,10 +230,13 @@ public void start() {
         
         System.out.print("How many teams will be participating? (4 or 8): ");
         String numberOfTeams = scanner.nextLine();
+
+        System.out.print("Maximum players per team: ");
+        String maxPlayersPerTeam = scanner.nextLine();
         
         System.out.println("=============================\n");
         
-        return new String[]{tournamentName, gameName, numberOfTeams};
+        return new String[]{tournamentName, gameName, numberOfTeams, maxPlayersPerTeam};
     }   
     
     /**
@@ -278,6 +291,7 @@ public void start() {
             "View Registered Teams",
             "Add Team to Tournament",
             "Remove Team from Tournament",
+            "Change Validation Policy",
             "Start Tournament",
             "Record Match Results",
             "View Tournament Bracket",
@@ -630,6 +644,68 @@ public void start() {
     }
     
     /**
+     * Displays a screen for changing the team validation policy on a tournament.
+     * Only available while the tournament is in the REGISTRATION phase.
+     * Lets the user choose between Flexible (1 to max players) and Strict (exact player count).
+     * @param tournamentName The name of the tournament to update.
+     */
+    private void displayChangePolicy(String tournamentName) {
+        java.util.Map<String, Tournament> tournaments = manager.getTournaments();
+        Tournament tournament = tournaments.get(tournamentName);
+
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("CHANGE VALIDATION POLICY - " + tournamentName);
+        System.out.println("=".repeat(50));
+
+        if (tournament == null) {
+            System.out.println("Tournament not found.");
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+
+        if (!tournament.isRegistrationOpen()) {
+            System.out.println("Policy can only be changed during the Registration phase.");
+            System.out.println("Current state: " + (tournament.isInProgress() ? "In Progress" : "Completed"));
+            System.out.println("=".repeat(50) + "\n");
+            return;
+        }
+
+        System.out.println("Select a validation policy for team registration:\n");
+        System.out.println("  Flexible  - Accepts teams with 1 up to the max number of players.");
+        System.out.println("  Strict    - Requires every team to have exactly the max number of players.");
+        System.out.println("  Max players per team for this tournament: " + tournament.getMaxPlayersPerTeam());
+        System.out.println();
+
+        List<String> policyOptions = Arrays.asList(
+            "Flexible (1 to max players)",
+            "Strict (exact player count required)",
+            "Cancel"
+        );
+
+        SimpleMenuSelector menu = new SimpleMenuSelector(policyOptions, scanner, "CHOOSE POLICY");
+        int choice = menu.selectOption();
+
+        if (choice == 2) {
+            System.out.println("Policy unchanged.");
+            return;
+        }
+
+        ITeamValidationPolicy newPolicy = (choice == 0)
+            ? new FlexibleTeamValidationPolicy()
+            : new StrictTeamValidationPolicy();
+
+        try {
+            manager.setTournamentTeamPolicy(tournamentName, newPolicy);
+            String policyName = (choice == 0) ? "Flexible" : "Strict";
+            System.out.println("\nPolicy updated to: " + policyName);
+            System.out.println("=".repeat(50) + "\n");
+        } catch (Exception e) {
+            System.out.println("\nError: " + e.getMessage());
+            System.out.println("=".repeat(50) + "\n");
+        }
+    }
+
+    /**
      * Displays a screen for bulk creating multiple teams.
      * Allows user to specify number of teams and players per team.
      * Teams are auto-generated with names (Team 1, Team 2, etc.) and auto-populated with players.
@@ -673,12 +749,17 @@ public void start() {
         
         // Create teams
         int successCount = 0;
-        int failureCount = 0;
+        java.util.Set<String> existingNames = manager.getTeams().keySet();
+        int counter = 1;
         
         System.out.println("\nCreating " + numTeams + " teams with " + numPlayers + " players each...\n");
         
-        for (int i = 1; i <= numTeams; i++) {
-            String teamName = "Team " + i;
+        for (int i = 0; i < numTeams; i++) {
+            // Find the next available team name by skipping any that already exist
+            while (existingNames.contains("Team " + counter)) {
+                counter++;
+            }
+            String teamName = "Team " + counter++;
             
             try {
                 manager.CreateTeam(teamName);
@@ -696,16 +777,14 @@ public void start() {
                 }
                 
                 successCount++;
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | IllegalStateException e) {
                 System.out.println("Error creating " + teamName + ": " + e.getMessage());
-                failureCount++;
             }
         }
         
         System.out.println("\n" + "=".repeat(50));
         System.out.println("Bulk Team Creation Summary:");
         System.out.println("  Successfully created: " + successCount + " teams");
-        System.out.println("  Failed to create: " + failureCount + " teams");
         System.out.println("=".repeat(50) + "\n");
     }
 

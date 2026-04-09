@@ -73,16 +73,16 @@ public class TournamentManager
     
     /**
      * Creates a new Tournament and registers it in the tournament pool.
-     * The tournament is initialized with a max player count of 1; teams with
-     * any number of players are accepted once the flexible policy is active.
-     * @param tournamentName The unique display name for the tournament.
-     * @param gameName       The game being played.
-     * @param numOfTeams     The required number of participating teams (must be 4 or 8).
-     * @throws IllegalArgumentException if {@code numOfTeams} is not 4 or 8.
+     * @param tournamentName    The unique display name for the tournament.
+     * @param gameName          The game being played.
+     * @param numOfTeams        The required number of participating teams (must be 4 or 8).
+     * @param maxPlayersPerTeam The maximum number of players allowed per team.
+     * @throws IllegalArgumentException if {@code numOfTeams} is not 4 or 8, or
+     *                                  if {@code maxPlayersPerTeam} is less than 1.
      */
-    public void CreateTournament(String tournamentName, String gameName, int numOfTeams) 
+    public void CreateTournament(String tournamentName, String gameName, int numOfTeams, int maxPlayersPerTeam) 
     {
-        Tournament newTournament = new Tournament(tournamentName, numOfTeams, 1, gameName);
+        Tournament newTournament = new Tournament(tournamentName, numOfTeams, maxPlayersPerTeam, gameName);
         tournaments.put(tournamentName, newTournament);
     }
 
@@ -194,6 +194,21 @@ public class TournamentManager
         
         // Advance the bracket by starting any matches in the next round that are now ready
         currentlySelectedTournament.advanceReadyMatches();
+    }
+
+    /**
+     * Changes the team validation policy for a specific tournament.
+     * Only permitted while the tournament is still in the REGISTRATION phase.
+     * @param tournamentName The name of the tournament to update.
+     * @param policy         The new policy to apply.
+     * @throws IllegalArgumentException if the tournament is not found.
+     * @throws IllegalStateException    if the tournament has already started.
+     */
+    public void setTournamentTeamPolicy(String tournamentName, ITeamValidationPolicy policy) {
+        if (!tournaments.containsKey(tournamentName)) {
+            throw new IllegalArgumentException("Tournament '" + tournamentName + "' not found.");
+        }
+        tournaments.get(tournamentName).setTeamValidationPolicy(policy);
     }
 
     // --- Bracket operations ---
